@@ -151,13 +151,13 @@ input_file = spark \
     .withColumnRenamed('Ref', 'reference') \
     .withColumnRenamed('Alt', 'alternate') \
     .withColumnRenamed('Func.refGene', 'Func_refGene') \
-    .withColumnRenamed('ExonicFunc.refGene', 'ExonicFunc_refGene')
+    .withColumnRenamed('ExonicFunc.refGene', 'ExonicFunc_refGene') \
+    .withColumnRenamed('Gene.refGene', 'Gene_refGene')
     
 input_file = input_file \
     .withColumn('chromosome', \
                 F.when(input_file.chromosome.startswith('chr'), F.regexp_replace('chromosome', 'chr', '')) \
-                .otherwise(input_file.chromosome)) \
-    .select(cond + ["Func_refGene", "ExonicFunc_refGene"])
+                .otherwise(input_file.chromosome))
 
 # Keep high impact variants
 table_imported_exon = input_file \
@@ -167,18 +167,19 @@ table_imported_exon = input_file \
 # Attach TOPMed and max gnomAD/TOPMed frequencies
 table_imported_exon = table_imported_exon \
     .join(topmed.alias('g'), cond, 'left') \
-    .select([F.col(x) for x in table_imported_exon.columns] + [F.col('g.af')]) \
+    .select([F.col(x) for x in table_imported_exon.columns if '.' not in x] + [F.col('g.af')]) \
     .withColumnRenamed('af', 'TOPMed_af')
 table_imported_exon = table_imported_exon \
-    .withColumn('max_gnomad_topmed', F.greatest( \
+    .withColumn('max_gnomad_af', F.greatest( \
         F.lit(0), \
         F.col('gnomad211_genome_AF').cast('double'), \
         F.col('gnomad211_exome_AF').cast('double'), \
-        F.col('gnomad30_genome_AF').cast('double')))
+        F.col('gnomad30_genome_AF').cast('double'), \
+        F.col('TOPMed_af').cast('double')))
 
 # Flag using MAF
 table_imported_exon = table_imported_exon \
-        .withColumn('flag_keep', F.when(F.col('max_gnomad_topmed') <= maf, 1).otherwise(0))
+        .withColumn('flag_keep', F.when(F.col('max_gnomad_af') <= maf, 1).otherwise(0))
 
 # Table ClinVar, restricted to those seen in variants and labeled as pathogenic/likely_pathogenic
 c_clv = ['VariationID', 'clin_sig']
@@ -224,7 +225,7 @@ if 'HGMD' in known_variants_l and t_hgmd.count() > 0:
 
 # Attach HGMD gene-disease relationships
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn \
-    .join(g_hgmd.alias('g'), table_imported_exon_dbn.CSQ_SYMBOL == g_hgmd.HGMD_symbol, 'left') \
+    .join(g_hgmd.alias('g'), table_imported_exon_dbn.Gene_refGene == g_hgmd.HGMD_symbol, 'left') \
     .select([F.col(x) for x in table_imported_exon_dbn.columns] + \
             [F.col('g.entrez_gene_id'), \
                 F.col('g.HGMD_DM'), \
@@ -239,7 +240,7 @@ table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
 
 # Attach Orphanet gene-disease relationships
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
-    .join(g_orph.alias('g'), table_imported_exon_dbn_phenotypes.CSQ_SYMBOL == g_orph.Orphanet_gene_symbol, 'left') \
+    .join(g_orph.alias('g'), table_imported_exon_dbn_phenotypes.Gene_refGene == g_orph.Orphanet_gene_symbol, 'left') \
     .select([F.col(x) for x in table_imported_exon_dbn_phenotypes.columns] \
         + [F.col('g.Orphanet_disorder_id_combined'), \
             F.col('g.Orphanet_gene_source_of_validation_combined'), \
@@ -248,7 +249,7 @@ table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
 
 # Attach GenCC gene-disease relationships
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
-    .join(g_genc.alias('g'), table_imported_exon_dbn_phenotypes.CSQ_SYMBOL == g_genc.GenCC_gene_symbol, 'left') \
+    .join(g_genc.alias('g'), table_imported_exon_dbn_phenotypes.Gene_refGene == g_genc.GenCC_gene_symbol, 'left') \
     .select([F.col(x) for x in table_imported_exon_dbn_phenotypes.columns] \
         + [F.col('g.GenCC_disease_curie_combined'), \
             F.col('g.GenCC_disease_title_combined'), \

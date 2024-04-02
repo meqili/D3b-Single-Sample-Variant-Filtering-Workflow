@@ -106,7 +106,7 @@ outputs:
 - id: sample_VWB_filtering_ouput
   type: File
   outputBinding:
-    glob: '.VWB_result.tsv'
+    glob: '*.VWB_result.tsv'
 
 baseCommand:
 - tar
