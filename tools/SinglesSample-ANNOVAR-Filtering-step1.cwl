@@ -2,8 +2,8 @@
 
 cwlVersion: v1.2
 class: CommandLineTool
-id: SinglesSample-Filtering-step1
-label: SinglesSample-Filtering-step1
+id: SinglesSample-ANNOVAR-Filtering-step1
+label: SinglesSample-ANNOVAR-Filtering-step1
 doc: |-
   Get a list of deleterious variants in interested genes from specified study cohort(s) in the Kids First program.
 $namespaces:
@@ -18,9 +18,9 @@ requirements:
   dockerPull: pgc-images.sbgenomics.com/d3b-bixu/pyspark:3.1.2
 - class: InitialWorkDirRequirement
   listing:
-  - entryname: SinglesSample-Filtering-step1.py
+  - entryname: SinglesSample-ANNOVAR-Filtering-step1.py
     entry:
-      $include: ../scripts/SinglesSample-Filtering-step1.py
+      $include: ../scripts/SinglesSample-ANNOVAR-Filtering-step1.py
 - class: InlineJavascriptRequirement
 
 inputs:
@@ -118,5 +118,5 @@ arguments:
   shellQuote: false
 - position: 2
   valueFrom: |-
-    && spark-submit --packages io.projectglow:glow-spark3_2.12:1.1.2  --conf spark.hadoop.io.compression.codecs=io.projectglow.sql.util.BGZFCodec  --conf spark.sql.broadcastTimeout=$(inputs.sql_broadcastTimeout)  --driver-memory $(inputs.spark_driver_mem)G  SinglesSample-Filtering-step1.py  --clinvar ./$(inputs.clinvar.nameroot.replace(".tar", ""))/  --dbnsfp ./$(inputs.dbnsfp_annovar.nameroot.replace(".tar", ""))/   --gencc ./$(inputs.gencc.nameroot.replace(".tar", ""))/ --hgmd_gene ./$(inputs.hgmd_gene.nameroot.replace(".tar", ""))/  --hgmd_var ./$(inputs.hgmd_var.nameroot.replace(".tar", ""))/  --omim_gene ./$(inputs.omim_gene.nameroot.replace(".tar", ""))/   --orphanet_gene ./$(inputs.orphanet_gene.nameroot.replace(".tar", ""))/ --topmed ./$(inputs.topmed.nameroot.replace(".tar", ""))/ 
+    && spark-submit --packages io.projectglow:glow-spark3_2.12:1.1.2  --conf spark.hadoop.io.compression.codecs=io.projectglow.sql.util.BGZFCodec  --conf spark.sql.broadcastTimeout=$(inputs.sql_broadcastTimeout)  --driver-memory $(inputs.spark_driver_mem)G  SinglesSample-ANNOVAR-Filtering-step1.py  --clinvar ./$(inputs.clinvar.nameroot.replace(".tar", ""))/  --dbnsfp ./$(inputs.dbnsfp_annovar.nameroot.replace(".tar", ""))/   --gencc ./$(inputs.gencc.nameroot.replace(".tar", ""))/ --hgmd_gene ./$(inputs.hgmd_gene.nameroot.replace(".tar", ""))/  --hgmd_var ./$(inputs.hgmd_var.nameroot.replace(".tar", ""))/  --omim_gene ./$(inputs.omim_gene.nameroot.replace(".tar", ""))/   --orphanet_gene ./$(inputs.orphanet_gene.nameroot.replace(".tar", ""))/ --topmed ./$(inputs.topmed.nameroot.replace(".tar", ""))/ 
   shellQuote: false
