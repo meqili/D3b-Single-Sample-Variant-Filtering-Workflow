@@ -18,7 +18,7 @@ baseCommand: [/bin/bash, -c]
 arguments:
 - position: 0
   valueFrom: |-
-    set -eo pipefail; gunzip -c $(inputs.vep_vcf.path) | perl Gene_VEP.pl | gzip -c > $(inputs.vep_vcf.nameroot).Annovar.vcf.gz
+    set -eo pipefail; gunzip -c $(inputs.vep_vcf.path) | perl Gene_VEP.pl > $(inputs.vep_vcf.nameroot).Annovar.vcf
   shellQuote: true
 
 inputs:
@@ -28,4 +28,4 @@ outputs:
   vep_to_annovar_output:
     type: File
     outputBinding:
-      glob: '*.Annovar.vcf.gz'
+      glob: '*.Annovar.vcf'

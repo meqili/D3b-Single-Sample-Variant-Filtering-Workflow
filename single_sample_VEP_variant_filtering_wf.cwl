@@ -92,10 +92,10 @@ inputs:
   - name: known_variants_list
     type: enum
     symbols:
-    - ClinVar
+    - Clinvar
     - HGMD
-    - ClinVar HGMD
-  default: ClinVar HGMD
+    - Clinvar HGMD
+  default: Clinvar HGMD
 - id: spark_driver_mem
   doc: GB of RAM to allocate to this task
   type: int?
@@ -104,8 +104,6 @@ inputs:
   doc: .config("spark.sql.broadcastTimeout", 36000)
   type: int?
   default: 36000
-- id: output_basemame
-  type: string
 
 outputs:
 - id: VWB_output
@@ -161,8 +159,6 @@ steps:
     source: orphanet_gene
   - id: topmed
     source: topmed
-  - id: output_basemame
-    source: output_basemame
   run: tools/SinglesSample-VEP-Filtering-step1.cwl
   out:
   - id: VWB_output
