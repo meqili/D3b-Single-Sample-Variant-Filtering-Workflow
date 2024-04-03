@@ -153,22 +153,22 @@ known_variants_l = args.known_variants_l # default: ('HGMD', 'Clinvar')
 # --------------------------------------
 
 input_file = args.input_file
-family_out = spark \
+singles_sample_variants = spark \
     .read \
     .options(delimiter="\t", header=True) \
     .csv(input_file) \
-    .withColumnRenamed('CHROM', 'chromosome') \
+    .withColumnRenamed('#CHROM', 'chromosome') \
     .withColumnRenamed('POS', 'start') \
     .withColumnRenamed('REF', 'reference') \
     .withColumnRenamed('ALT', 'alternate') \
     .withColumnRenamed('QUAL', 'quality')
-family_out = family_out \
+singles_sample_variants = singles_sample_variants \
     .withColumn('chromosome', \
-                F.when(family_out.chromosome.startswith('chr'), F.regexp_replace('chromosome', 'chr', '')) \
-                .otherwise(family_out.chromosome))
+                F.when(singles_sample_variants.chromosome.startswith('chr'), F.regexp_replace('chromosome', 'chr', '')) \
+                .otherwise(singles_sample_variants.chromosome))
 
 # Keep high impact variants
-table_imported_exon = family_out \
+table_imported_exon = singles_sample_variants \
     .where(F.col('CSQ_Consequence').isin(consequences_to_keep))
 
 # Attach TOPMed and max gnomAD/TOPMed frequencies

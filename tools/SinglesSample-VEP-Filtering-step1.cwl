@@ -81,22 +81,16 @@ inputs:
   - name: buildver
     type: enum
     symbols:
-    - ClinVar
+    - Clinvar
     - HGMD
-    - ClinVar HGMD
-  default: ClinVar HGMD
+    - Clinvar HGMD
+  default: Clinvar HGMD
   inputBinding:
     prefix: --known_variants_l
     position: 3
     shellQuote: false
 - id: input_file
   type: File
-- id: output_basemame
-  type: string
-  inputBinding:
-    prefix: --output_basemame
-    position: 3
-    shellQuote: false
 
 outputs:
 - id: VWB_output
@@ -114,5 +108,5 @@ arguments:
   shellQuote: false
 - position: 2
   valueFrom: |-
-    && spark-submit --packages io.projectglow:glow-spark3_2.12:1.1.2  --conf spark.hadoop.io.compression.codecs=io.projectglow.sql.util.BGZFCodec  --conf spark.sql.broadcastTimeout=$(inputs.sql_broadcastTimeout)  --driver-memory $(inputs.spark_driver_mem)G  FamilyAnalysis_trios_step1.py  --clinvar ./$(inputs.clinvar.nameroot.replace(".tar", ""))/  --dbnsfp ./$(inputs.dbnsfp_annovar.nameroot.replace(".tar", ""))/   --gencc ./$(inputs.gencc.nameroot.replace(".tar", ""))/ --hgmd_gene ./$(inputs.hgmd_gene.nameroot.replace(".tar", ""))/  --hgmd_var ./$(inputs.hgmd_var.nameroot.replace(".tar", ""))/  --omim_gene ./$(inputs.omim_gene.nameroot.replace(".tar", ""))/   --orphanet_gene ./$(inputs.orphanet_gene.nameroot.replace(".tar", ""))/ --topmed ./$(inputs.topmed.nameroot.replace(".tar", ""))/ --input_file $(inputs.input_file.path)
+    && spark-submit --packages io.projectglow:glow-spark3_2.12:1.1.2  --conf spark.hadoop.io.compression.codecs=io.projectglow.sql.util.BGZFCodec  --conf spark.sql.broadcastTimeout=$(inputs.sql_broadcastTimeout)  --driver-memory $(inputs.spark_driver_mem)G  FamilyAnalysis_trios_step1.py  --clinvar ./$(inputs.clinvar.nameroot.replace(".tar", ""))/  --dbnsfp ./$(inputs.dbnsfp_annovar.nameroot.replace(".tar", ""))/   --gencc ./$(inputs.gencc.nameroot.replace(".tar", ""))/ --hgmd_gene ./$(inputs.hgmd_gene.nameroot.replace(".tar", ""))/  --hgmd_var ./$(inputs.hgmd_var.nameroot.replace(".tar", ""))/  --omim_gene ./$(inputs.omim_gene.nameroot.replace(".tar", ""))/   --orphanet_gene ./$(inputs.orphanet_gene.nameroot.replace(".tar", ""))/ --topmed ./$(inputs.topmed.nameroot.replace(".tar", ""))/ --input_file $(inputs.input_file.path) --output_basemame $(inputs.input_file.nameroot)
   shellQuote: false

@@ -12,9 +12,9 @@ requirements:
 - class: InlineJavascriptRequirement
 - class: InitialWorkDirRequirement
   listing:
-    - entryname: VEP_to_TSV_header.pl
+    - entryname: VEP_to_TSV_header_20240402.pl
       entry:
-        $include: ../scripts/VEP_to_TSV_header.pl
+        $include: ../scripts/VEP_to_TSV_header_20240402.pl
 
 inputs:
 - id: vcf_header
@@ -32,5 +32,5 @@ baseCommand: [/bin/bash, -c]
 arguments:
 - position: 0
   valueFrom: |-
-    set -eo pipefail; perl VEP_to_TSV_header.pl $(inputs.vcf_header.path) $(inputs.vcf_wo_header.path) | gzip -c > $(inputs.vcf_wo_header.basename).tsv.gz
+    set -eo pipefail; perl VEP_to_TSV_header_20240402.pl $(inputs.vcf_header.path) $(inputs.vcf_wo_header.path) | gzip -c > $(inputs.vcf_wo_header.nameroot).tsv.gz
   shellQuote: true

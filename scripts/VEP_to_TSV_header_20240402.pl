@@ -1,6 +1,5 @@
 #!/usr/bin/perl -w
 
-# version: 20231007
 use strict;
 
 die "Usage: $0 <header> <VEP vcf>" unless (@ARGV == 2);
@@ -38,7 +37,7 @@ open(V, $ARGV[1]) || die "$!";
 while (<V>) {
 	s/[\n\r]+$//;
 	my @t = split(/\t/);
-	if (/^\#?CHR/i) {
+	if (/^\#?CHR/) {
 		$extra_last = 1 if ($t[-1] =~/inheritance|parent/i);
 		print join("\t", @t[0 .. 6]), "\t", join("\t", map {"INFO_$_"} @info_fields), "\t", join("\t", map {"CSQ_$_"} @csq_fields);
 		for (my $i = 9; $i < scalar(@t) - ($extra_last == 1 ? 1 : 0); $i ++) {

@@ -93,10 +93,10 @@ inputs:
   - name: buildver
     type: enum
     symbols:
-    - ClinVar
+    - Clinvar
     - HGMD
-    - ClinVar HGMD
-  default: ClinVar HGMD
+    - Clinvar HGMD
+  default: Clinvar HGMD
   inputBinding:
     prefix: --known_variants_l
     position: 3
