@@ -180,10 +180,6 @@ table_imported_exon = table_imported_exon \
     .withColumn('max_gnomad_topmed', F.greatest( \
         F.lit(0), \
         F.col('CSQ_gnomAD_AF').cast('double'), \
-        F.col('CSQ_gnomAD_exomes_controls_AF').cast('double'), \
-        F.col('CSQ_ALSPAC_AF').cast('double'), \
-        F.col('CSQ_TWINSUK_AF').cast('double'), \
-        F.col('CSQ_UK10K_AF').cast('double'), \
         F.col('INFO_gnomad_3_1_1_AF').cast('double'), \
         F.col('TOPMed_af').cast('double')))
 

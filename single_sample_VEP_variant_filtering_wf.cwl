@@ -18,9 +18,9 @@ inputs:
   label: vep_105.vcf.header
   type: File
   sbg:suggestedValue:
-    name: multi.vqsr.filtered.denovo.vep_105.vcf.header
+    name: VEP_105.vcf.header
     class: File
-    path: 6580cc595d793a326ba8a51e
+    path: 660ee111276fb244a6edaefd
 - id: topmed
   type: File
   sbg:suggestedValue:
