@@ -146,13 +146,14 @@ input_file = spark \
     .read \
     .options(delimiter="\t", header=True) \
     .csv(input_path) \
-    .withColumnRenamed('Chr', 'chromosome') \
-    .withColumnRenamed('Start', 'start') \
-    .withColumnRenamed('Ref', 'reference') \
-    .withColumnRenamed('Alt', 'alternate') \
-    .withColumnRenamed('Func.refGene', 'Func_refGene') \
-    .withColumnRenamed('ExonicFunc.refGene', 'ExonicFunc_refGene') \
-    .withColumnRenamed('Gene.refGene', 'Gene_refGene')
+    .withColumnRenamed('#CHROM', 'chromosome') \
+    .withColumnRenamed('POS', 'start') \
+    .withColumnRenamed('REF', 'reference') \
+    .withColumnRenamed('ALT', 'alternate') \
+    .withColumnRenamed('QUAL', 'quality') \
+    .withColumnRenamed('INFO_Func.refGene', 'Func_refGene') \
+    .withColumnRenamed('INFO_ExonicFunc.refGene', 'ExonicFunc_refGene') \
+    .withColumnRenamed('INFO_Gene.refGene', 'Gene_refGene')
     
 input_file = input_file \
     .withColumn('chromosome', \
@@ -172,9 +173,9 @@ table_imported_exon = table_imported_exon \
 table_imported_exon = table_imported_exon \
     .withColumn('max_gnomad_af', F.greatest( \
         F.lit(0), \
-        F.col('gnomad211_genome_AF').cast('double'), \
-        F.col('gnomad211_exome_AF').cast('double'), \
-        F.col('gnomad30_genome_AF').cast('double'), \
+        F.col('INFO_gnomad211_exome_AF').cast('double'), \
+        F.col('INFO_gnomad211_genome_AF').cast('double'), \
+        F.col('INFO_gnomad211_genome_AF').cast('double'), \
         F.col('TOPMed_af').cast('double')))
 
 # Flag using MAF
