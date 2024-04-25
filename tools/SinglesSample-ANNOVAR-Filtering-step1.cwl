@@ -22,6 +22,46 @@ requirements:
     entry:
       $include: ../scripts/SinglesSample-ANNOVAR-Filtering-step1.py
 - class: InlineJavascriptRequirement
+  expressionLib:
+  - |2-
+
+    var setMetadata = function(file, metadata) {
+        if (!('metadata' in file))
+            file['metadata'] = metadata;
+        else {
+            for (var key in metadata) {
+                file['metadata'][key] = metadata[key];
+            }
+        }
+        return file
+    };
+
+    var inheritMetadata = function(o1, o2) {
+        var commonMetadata = {};
+        if (!Array.isArray(o2)) {
+            o2 = [o2]
+        }
+        for (var i = 0; i < o2.length; i++) {
+            var example = o2[i]['metadata'];
+            for (var key in example) {
+                if (i == 0)
+                    commonMetadata[key] = example[key];
+                else {
+                    if (!(commonMetadata[key] == example[key])) {
+                        delete commonMetadata[key]
+                    }
+                }
+            }
+        }
+        if (!Array.isArray(o1)) {
+            o1 = setMetadata(o1, commonMetadata)
+        } else {
+            for (var i = 0; i < o1.length; i++) {
+                o1[i] = setMetadata(o1[i], commonMetadata)
+            }
+        }
+        return o1;
+    };
 
 inputs:
 - id: spark_driver_mem
@@ -52,12 +92,6 @@ inputs:
   type: File
 - id: topmed
   type: File
-- id: output_basemame
-  type: string
-  inputBinding:
-    prefix: --output_basemame
-    position: 3
-    shellQuote: false
 - id: input_file_path
   type: File
   inputBinding:
@@ -107,6 +141,7 @@ outputs:
   type: File
   outputBinding:
     glob: '*.VWB_result.tsv'
+    outputEval: $(inheritMetadata(self, inputs.input_file_path))
 
 baseCommand:
 - tar
@@ -118,5 +153,13 @@ arguments:
   shellQuote: false
 - position: 2
   valueFrom: |-
-    && spark-submit --packages io.projectglow:glow-spark3_2.12:1.1.2  --conf spark.hadoop.io.compression.codecs=io.projectglow.sql.util.BGZFCodec  --conf spark.sql.broadcastTimeout=$(inputs.sql_broadcastTimeout)  --driver-memory $(inputs.spark_driver_mem)G  SinglesSample-ANNOVAR-Filtering-step1.py  --clinvar ./$(inputs.clinvar.nameroot.replace(".tar", ""))/  --dbnsfp ./$(inputs.dbnsfp_annovar.nameroot.replace(".tar", ""))/   --gencc ./$(inputs.gencc.nameroot.replace(".tar", ""))/ --hgmd_gene ./$(inputs.hgmd_gene.nameroot.replace(".tar", ""))/  --hgmd_var ./$(inputs.hgmd_var.nameroot.replace(".tar", ""))/  --omim_gene ./$(inputs.omim_gene.nameroot.replace(".tar", ""))/   --orphanet_gene ./$(inputs.orphanet_gene.nameroot.replace(".tar", ""))/ --topmed ./$(inputs.topmed.nameroot.replace(".tar", ""))/ 
+    && spark-submit --packages io.projectglow:glow-spark3_2.12:1.1.2 \
+    --conf spark.hadoop.io.compression.codecs=io.projectglow.sql.util.BGZFCodec  \
+    --conf spark.executor.memory=34G \
+    --conf spark.executor.instances=3 \
+    --conf spark.executor.cores=5 \
+    --conf spark.kryoserializer.buffer.max=512m \
+    --conf spark.sql.broadcastTimeout=$(inputs.sql_broadcastTimeout)  \
+    --driver-memory $(inputs.spark_driver_mem)G  \
+    SinglesSample-ANNOVAR-Filtering-step1.py  --clinvar ./$(inputs.clinvar.nameroot.replace(".tar", ""))/  --dbnsfp ./$(inputs.dbnsfp_annovar.nameroot.replace(".tar", ""))/   --gencc ./$(inputs.gencc.nameroot.replace(".tar", ""))/ --hgmd_gene ./$(inputs.hgmd_gene.nameroot.replace(".tar", ""))/  --hgmd_var ./$(inputs.hgmd_var.nameroot.replace(".tar", ""))/  --omim_gene ./$(inputs.omim_gene.nameroot.replace(".tar", ""))/   --orphanet_gene ./$(inputs.orphanet_gene.nameroot.replace(".tar", ""))/ --topmed ./$(inputs.topmed.nameroot.replace(".tar", ""))/ --output_basemame $(inputs.input_file_path.nameroot)
   shellQuote: false
