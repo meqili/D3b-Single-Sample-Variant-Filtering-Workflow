@@ -122,11 +122,11 @@ topmed = spark.read.parquet(args.topmed).select(cond + [F.col('af')])
 # part 2: Setting parameters
 # --------------------------------------
 # Keep only high impact variants
-exonic_consequences_to_keep = ["frameshift insertion", "frameshift deletion",
-                        "frameshift block substitution", "stopgain",
-                        "stoploss", "nonframeshift insertion",
-                        "nonframeshift deletion", "nonframeshift block substitution",
-                        "nonsynonymous SNV"]
+exonic_consequences_to_keep = ["frameshift_insertion", "frameshift_deletion",
+                        "frameshift_block_substitution", "stopgain",
+                        "stoploss", "nonframeshift_insertion",
+                        "nonframeshift_deletion", "nonframeshift_block_substitution",
+                        "nonsynonymous_SNV"]
 
 # Set minor allele frequency (MAF) threshold in gnomAD and TOPMed
 maf = args.maf # default: 0.0001
