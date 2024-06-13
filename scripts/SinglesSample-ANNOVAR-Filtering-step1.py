@@ -171,7 +171,7 @@ table_imported_exon = table_imported_exon \
     .select([F.col(x) for x in table_imported_exon.columns if '.' not in x] + [F.col('g.af')]) \
     .withColumnRenamed('af', 'TOPMed_af')
 table_imported_exon = table_imported_exon \
-    .withColumn('max_gnomad_af', F.greatest( \
+    .withColumn('max_gnomad_topmed', F.greatest( \
         F.lit(0), \
         F.col('INFO_gnomad211_exome_AF').cast('double'), \
         F.col('INFO_gnomad211_genome_AF').cast('double'), \
@@ -180,7 +180,7 @@ table_imported_exon = table_imported_exon \
 
 # Flag using MAF
 table_imported_exon = table_imported_exon \
-        .withColumn('flag_keep', F.when(F.col('max_gnomad_af') <= maf, 1).otherwise(0))
+        .withColumn('flag_keep', F.when(F.col('max_gnomad_topmed') <= maf, 1).otherwise(0))
 
 # Table ClinVar, restricted to those seen in variants and labeled as pathogenic/likely_pathogenic
 c_clv = ['VariationID', 'clin_sig']
