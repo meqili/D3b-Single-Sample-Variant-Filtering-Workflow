@@ -25,6 +25,8 @@ parser.add_argument('--hgmd_gene', help='hgmd_gene parquet file dir')
 parser.add_argument('--omim_gene', help='omim_gene parquet file dir')
 parser.add_argument('--orphanet_gene', help='orphanet_gene parquet file dir')
 parser.add_argument('--topmed', help='topmed parquet file dir')
+parser.add_argument('--spliceai', help='spliceai parquet file dir')
+parser.add_argument('--mmsplice', help='mmsplice parquet file dir')
 parser.add_argument('--maf', default=0.0001, help='Set minor allele frequency (MAF) threshold in gnomAD and TOPMed')
 parser.add_argument('--dpc_l', default=0.5,
         help='damage predict count lower threshold')
@@ -116,6 +118,12 @@ g_orph = orphanet_gene \
                 F.when(F.col('Orphanet_HGNC_gene_id') == '[]', F.lit(None)).otherwise(F.col('Orphanet_HGNC_gene_id')))
 
 topmed = spark.read.parquet(args.topmed).select(cond + [F.col('af')])
+
+spliceai = spark.read.parquet(args.spliceai).select(cond + [F.col('SpliceAI_DS_AG')] 
+                                                    + [F.col('SpliceAI_DS_AL')] + [F.col('SpliceAI_DS_DG')] + [F.col('SpliceAI_DS_DL')])
+
+mmsplice = spark.read.parquet(args.mmsplice).select(cond + [F.col('mmsplice_delta_logit_psi')] 
+                                                    + [F.col('mmsplice_pathogenicity')] + [F.col('mmsplice_efficiency')])
 
 
 # --------------------------------------
@@ -262,6 +270,10 @@ table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
             ), \
             F.asc(F.col('start'))
         )
+
+# Attach Splice information with spliceAI and mmsplice
+table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes.join(spliceai, cond, 'left') \
+        .join(mmsplice, cond, 'left')
 
 # Generate output
 cols_json = [F.to_json(c[0]).alias(c[0]) if c[1].startswith("struct") else F.col(c[0]) for c in table_imported_exon_dbn_phenotypes.dtypes]
