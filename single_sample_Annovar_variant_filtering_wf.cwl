@@ -61,6 +61,18 @@ inputs:
     name: topmed_bravo.tar.gz
     class: File
     path: 65b1451caa2e154c2a722ec2
+- id: spliceai
+  type: File
+  sbg:suggestedValue:
+    name: hg38_SpliceAI.tar.gz
+    class: File
+    path: 669fd3e1eead7f7aca7e7e65
+- id: mmsplice
+  type: File
+  sbg:suggestedValue:
+    name: hg38_mmsplice.tar.gz
+    class: File
+    path: 669fd3e1eead7f7aca7e7e69
 - id: orphanet_gene
   type: File
   sbg:suggestedValue:
@@ -77,22 +89,22 @@ inputs:
   doc: the latest HGMD variant  parquet file dir
   type: File
   sbg:suggestedValue:
-    name: hg38_HGMD2024Q1_variant.tar.gz
+    name: hg38_HGMD2024Q2_variant.tar.gz
     class: File
-    path: 663a781a27374715fccb7b47
+    path: 66a3b948eead7f7aca80d33b
 - id: hgmd_gene
   type: File
   sbg:suggestedValue:
-    name: hg38_HGMD2024Q1_gene_sorted.tar.gz
+    name: hg38_HGMD2024Q2_gene_sorted.tar.gz
     class: File
-    path: 663a781a27374715fccb7b43
+    path: 66a3b948eead7f7aca80d33d
 - id: gencc
   doc: gencc parquet file dir
   type: File
   sbg:suggestedValue:
-    name: gencc20231003.tar.gz
+    name: gencc20240725.tar.gz
     class: File
-    path: 65b1451daa2e154c2a722eca
+    path: 66a2e482938544533ad4efbc
 - id: dbnsfp_annovar_parquet
   doc: dbnsfp annovar parquet file dir
   type: File
@@ -186,6 +198,10 @@ steps:
     source: orphanet_gene
   - id: topmed
     source: topmed
+  - id: spliceai
+    source: spliceai
+  - id: mmsplice
+    source: mmsplice
   run: tools/SinglesSample-ANNOVAR-Filtering-step1.cwl
   out:
   - id: sample_VWB_filtering_ouput
