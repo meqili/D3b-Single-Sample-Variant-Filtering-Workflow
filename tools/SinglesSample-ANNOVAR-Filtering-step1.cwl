@@ -92,6 +92,10 @@ inputs:
   type: File
 - id: topmed
   type: File
+- id: spliceai
+  type: File
+- id: mmsplice
+  type: File
 - id: input_file_path
   type: File
   inputBinding:
@@ -149,7 +153,7 @@ baseCommand:
 arguments:
 - position: 1
   valueFrom: |-
-    $(inputs.dbnsfp_annovar.path)  && tar -xvf $(inputs.clinvar.path)  && tar -xvf $(inputs.gencc.path) && tar -xvf $(inputs.hgmd_gene.path) && tar -xvf $(inputs.omim_gene.path) && tar -xvf $(inputs.orphanet_gene.path) && tar -xvf $(inputs.topmed.path) && tar -xvf $(inputs.hgmd_var.path)
+    $(inputs.dbnsfp_annovar.path)  && tar -xvf $(inputs.clinvar.path)  && tar -xvf $(inputs.gencc.path) && tar -xvf $(inputs.hgmd_gene.path) && tar -xvf $(inputs.omim_gene.path) && tar -xvf $(inputs.orphanet_gene.path) && tar -xvf $(inputs.topmed.path) && tar -xvf $(inputs.spliceai.path) && tar -xvf $(inputs.mmsplice.path) && tar -xvf $(inputs.hgmd_var.path)
   shellQuote: false
 - position: 2
   valueFrom: |-
@@ -161,5 +165,10 @@ arguments:
     --conf spark.kryoserializer.buffer.max=512m \
     --conf spark.sql.broadcastTimeout=$(inputs.sql_broadcastTimeout)  \
     --driver-memory $(inputs.spark_driver_mem)G  \
-    SinglesSample-ANNOVAR-Filtering-step1.py  --clinvar ./$(inputs.clinvar.nameroot.replace(".tar", ""))/  --dbnsfp ./$(inputs.dbnsfp_annovar.nameroot.replace(".tar", ""))/   --gencc ./$(inputs.gencc.nameroot.replace(".tar", ""))/ --hgmd_gene ./$(inputs.hgmd_gene.nameroot.replace(".tar", ""))/  --hgmd_var ./$(inputs.hgmd_var.nameroot.replace(".tar", ""))/  --omim_gene ./$(inputs.omim_gene.nameroot.replace(".tar", ""))/   --orphanet_gene ./$(inputs.orphanet_gene.nameroot.replace(".tar", ""))/ --topmed ./$(inputs.topmed.nameroot.replace(".tar", ""))/ --output_basemame $(inputs.input_file_path.nameroot)
+    SinglesSample-ANNOVAR-Filtering-step1.py  --clinvar ./$(inputs.clinvar.nameroot.replace(".tar", ""))/  \
+    --dbnsfp ./$(inputs.dbnsfp_annovar.nameroot.replace(".tar", ""))/   --gencc ./$(inputs.gencc.nameroot.replace(".tar", ""))/ \
+    --hgmd_gene ./$(inputs.hgmd_gene.nameroot.replace(".tar", ""))/  --hgmd_var ./$(inputs.hgmd_var.nameroot.replace(".tar", ""))/  \
+    --omim_gene ./$(inputs.omim_gene.nameroot.replace(".tar", ""))/   --orphanet_gene ./$(inputs.orphanet_gene.nameroot.replace(".tar", ""))/ \
+    --topmed ./$(inputs.topmed.nameroot.replace(".tar", ""))/ --spliceai ./$(inputs.spliceai.nameroot.replace(".tar", ""))/ \
+    --mmsplice ./$(inputs.mmsplice.nameroot.replace(".tar", ""))/ --output_basemame $(inputs.input_file_path.nameroot)
   shellQuote: false
