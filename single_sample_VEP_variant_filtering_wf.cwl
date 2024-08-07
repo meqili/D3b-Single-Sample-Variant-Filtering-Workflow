@@ -14,13 +14,6 @@ requirements:
 inputs:
 - id: vep_vcf
   type: File
-- id: vcf_header
-  label: vep_105.vcf.header
-  type: File
-  sbg:suggestedValue:
-    name: VEP_105.vcf.header
-    class: File
-    path: 660ee111276fb244a6edaefd
 - id: topmed
   type: File
   sbg:suggestedValue:
@@ -43,22 +36,22 @@ inputs:
   doc: the latest HGMD variant  parquet file dir
   type: File
   sbg:suggestedValue:
-    name: hg38_HGMD2024Q1_variant.tar.gz
+    name: hg38_HGMD2024Q2_variant.tar.gz
     class: File
-    path: 663a781a27374715fccb7b47
+    path: 66a3b948eead7f7aca80d33b
 - id: hgmd_gene
   type: File
   sbg:suggestedValue:
-    name: hg38_HGMD2024Q1_gene_sorted.tar.gz
+    name: hg38_HGMD2024Q2_gene_sorted.tar.gz
     class: File
-    path: 663a781a27374715fccb7b43
+    path: 66a3b948eead7f7aca80d33d
 - id: gencc
   doc: gencc parquet file dir
   type: File
   sbg:suggestedValue:
-    name: gencc20231003.tar.gz
+    name: gencc20240725.tar.gz
     class: File
-    path: 65b1451daa2e154c2a722eca
+    path: 66a2e482938544533ad4efbc
 - id: dbnsfp_annovar_parquet
   doc: dbnsfp annovar parquet file dir
   type: File
@@ -72,7 +65,7 @@ inputs:
   sbg:suggestedValue:
     name: clinvar_stable.tar.gz
     class: File
-    path: 660b15cafc7d31015a62ec13
+    path: 664f6fac18e23e6215aeb9ad
 - id: maf
   doc: minor allele frequency (MAF) threshold in gnomAD and TOPMed
   type: double?
@@ -119,9 +112,10 @@ steps:
   run: tools/vep_to_annovar.cwl
   out:
   - id: vep_to_annovar_output
+  - id: vcf_header
 - id: vep_vcf_to_tsv_header
   in:
-    vcf_header: vcf_header
+    vcf_header: vep_to_annovar/vcf_header
     vcf_wo_header: vep_to_annovar/vep_to_annovar_output
   run: tools/vep_vcf_to_tsv_header.cwl
   out:
