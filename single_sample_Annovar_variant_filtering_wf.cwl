@@ -54,9 +54,9 @@ inputs:
 - id: hgmd_gene
   type: File
   sbg:suggestedValue:
-    name: hg38_HGMD2024Q4_gene_sorted.tar.gz
+    name: hg38_HGMD2025Q1_gene_sorted.tar.gz
     class: File
-    path: 6780431109c1a319b8e0d18a
+    path: 67efe4ae799cc5199079fea3
 - id: gencc
   doc: gencc parquet file dir
   type: File
