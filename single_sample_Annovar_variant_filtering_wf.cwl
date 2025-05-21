@@ -48,9 +48,9 @@ inputs:
   doc: the latest HGMD variant  parquet file dir
   type: File
   sbg:suggestedValue:
-    name: hg38_HGMD2024Q4_variant.tar.gz
+    name: hg38_HGMD2025Q1_variant.tar.gz
     class: File
-    path: 6780431109c1a319b8e0d188
+    path: 67efe4ae799cc5199079fea1
 - id: hgmd_gene
   type: File
   sbg:suggestedValue:
@@ -75,9 +75,9 @@ inputs:
   doc: clinvar parquet file dir
   type: File
   sbg:suggestedValue:
-    name: clinvar_stable.tar.gz
+    name: clinvar_20250504.tar.gz
     class: File
-    path: 664f6fac18e23e6215aeb9ad
+    path: 682cce2cf8492c6e34394dc5
 - id: maf
   doc: minor allele frequency (MAF) threshold in gnomAD and TOPMed
   type: double?
