@@ -1,22 +1,27 @@
-# D3b Bixu Repository Template
+# Single Sample Variant Filtering Workflow Updates
 
-Use this template to bootstrap a new D3b bixu repository 
+## VEP Inputs – June 2025
 
-### Badges
+### Summary of Changes
 
-Update the LICENSE badge to point to the new repo location on GitHub.
-Note that the LICENSE badge will fail to render correctly unless the repo has
-been set to **public**.
+1. **Upgraded PySpark** from version **3.1** to **3.5**
+2. **ClinVar** is now read from a **Delta table** instead of a tarred Parquet file
+3. **Integrated new annotation databases**:
+   - `dbSNP`: includes `rs` names
+   - `Cosmic_CancerGeneCensus`
+   - `All of Us`
+   - `Regeneron`
+4. **Reference gene table** (`genes`) is now sourced from a Delta table with key columns:
+   - `entrez_gene_id`
+   - `hgnc`
+   - `ensembl_gene_id`
+5. **Table joins using gene IDs**:
+   - `hgmd_gene`
+   - `Orphanet_gene`
+   - `gencc`
 
-Add additional badges for CI, docs, and other integrations as needed within the
-`<p>` tag next to the LICENSE.
+---
 
-### Repo Description
+## ANNOVAR Inputs – June 2025
 
-Update the repositories description with a short summary of the repository's
-intent.
-Include an appropriate emoji at the start of the summary.
-
-Add a handful of tags that summarize topics relating to the repository.
-If the repo has a documentation site or webpage, add it next to the repository
-description.
+_Changes to be documented here..._
