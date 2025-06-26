@@ -1,7 +1,6 @@
 import argparse
 from argparse import RawTextHelpFormatter
-import pyspark
-import pyspark.sql.functions as F
+from pyspark.sql import SparkSession, functions as F
 from pyspark.sql.types import StringType
 import glow
 
@@ -14,9 +13,14 @@ parser = argparse.ArgumentParser(
 parser = argparse.ArgumentParser()
 parser.add_argument('--output_basemame')
 parser.add_argument('--input_file', help='Input file path for AR_comphet file')
-parser.add_argument('--clinvar', help='clinvar parquet file dir')
+parser.add_argument('--clinvar', action='store_true', help='Include clinvar data')
+parser.add_argument('--genes', action='store_true', help='Include genes data')
+parser.add_argument('--dbsnp', action='store_true', help='Include dbsnp data')
 parser.add_argument('--dbnsfp', help='dbnsfp annovar parquet file dir')
 parser.add_argument('--gencc', help='gencc parquet file dir')
+parser.add_argument('--Cosmic_CancerGeneCensus', help='Cosmic_CancerGeneCensus parquet file dir')
+parser.add_argument('--regeneron', help='regeneron parquet file dir')
+parser.add_argument('--allofus', help='allofus parquet file dir')
 parser.add_argument('--hgmd_var', help='hgmd_var parquet file dir')
 parser.add_argument('--hgmd_gene', help='hgmd_gene parquet file dir')
 parser.add_argument('--omim_gene', help='omim_gene parquet file dir')
@@ -29,13 +33,35 @@ parser.add_argument('--dpc_u', default=1,
         help='damage predict count upper threshold')
 parser.add_argument('--known_variants_l', nargs='+', default=['ClinVar', 'HGMD'],
                     help='known variant databases used, default is ClinVar and HGMD')
+parser.add_argument('--spark_executor_mem', type=int, default=4, help='Spark executor memory in GB')
+parser.add_argument('--spark_executor_instance', type=int, default=1, help='Number of Spark executor instances')
+parser.add_argument('--spark_executor_core', type=int, default=1, help='Number of Spark executor cores')
+parser.add_argument('--spark_driver_maxResultSize', type=int, default=1, help='Spark driver max result size in GB')
+parser.add_argument('--sql_broadcastTimeout', type=int, default=300, help='Spark SQL broadcast timeout in seconds')
+parser.add_argument('--spark_driver_core', type=int, default=1, help='Number of Spark driver cores')
+parser.add_argument('--spark_driver_mem', type=int, default=4, help='Spark driver memory in GB')
 args = parser.parse_args()
 
-# Create spark session
-spark = (
-    pyspark.sql.SparkSession.builder.appName("PythonPi")
+# Create SparkSession
+spark = SparkSession \
+    .builder \
+    .appName('glow_pyspark') \
+    .config('spark.jars.packages', 'org.apache.hadoop:hadoop-aws:3.3.4,io.delta:delta-spark_2.12:3.1.0,io.projectglow:glow-spark3_2.12:2.0.0') \
+    .config('spark.jars.excludes', 'org.apache.hadoop:hadoop-client,io.netty:netty-all,io.netty:netty-handler,io.netty:netty-transport-native-epoll') \
+    .config('spark.sql.extensions', 'io.delta.sql.DeltaSparkSessionExtension') \
+    .config('spark.sql.catalog.spark_catalog', 'org.apache.spark.sql.delta.catalog.DeltaCatalog') \
+    .config('spark.sql.debug.maxToStringFields', '0') \
+    .config('spark.hadoop.io.compression.codecs', 'io.projectglow.sql.util.BGZFCodec') \
+    .config('spark.hadoop.fs.s3a.aws.credentials.provider', 'org.apache.hadoop.fs.s3a.AnonymousAWSCredentialsProvider') \
+    .config('spark.kryoserializer.buffer.max', '512m') \
+    .config('spark.executor.memory', f'{args.spark_executor_mem}G') \
+    .config('spark.executor.instances', args.spark_executor_instance) \
+    .config('spark.executor.cores', args.spark_executor_core) \
+    .config('spark.driver.maxResultSize', f'{args.spark_driver_maxResultSize}G') \
+    .config('spark.sql.broadcastTimeout', args.sql_broadcastTimeout) \
+    .config('spark.driver.cores', args.spark_driver_core) \
+    .config('spark.driver.memory', f'{args.spark_driver_mem}G') \
     .getOrCreate()
-    )
 # Register so that glow functions like read vcf work with spark. Must be run in spark shell or in context described in help
 spark = glow.register(spark)
 
@@ -44,7 +70,14 @@ spark = glow.register(spark)
 # --------------------------------------
 cond = ['chromosome', 'start', 'reference', 'alternate']
 # Table ClinVar
-clinvar = spark.read.parquet(args.clinvar)
+if args.clinvar:
+    clinvar = spark.read.format("delta") \
+        .load('s3a://kf-strides-public-vwb-prd/clinvar/')
+# Table dbSNP
+if args.dbsnp:
+    dbsnp = spark.read.format("delta") \
+        .load('s3a://kf-strides-public-vwb-prd/dbsnp/') \
+        .select(cond + ['name'])
 # Table dbnsfp_annovar, added a column for ratio of damage predictions to all predictions
 dbnsfp = spark.read.parquet(args.dbnsfp).select(cond + [F.col('DamagePredCount')])
 c_dbn = ['DamagePredCount', 'PredCountRatio_D2T']
@@ -56,27 +89,38 @@ t_dbn = dbnsfp \
 # GenCC genes
 gencc = spark.read.parquet(args.gencc)
 g_genc = gencc \
-    .select('gene_symbol', 'disease_curie', 'disease_title', 'classification_title', 'moi_title') \
-    .withColumnRenamed('gene_symbol', 'GenCC_gene_symbol') \
+    .select('gene_curie', 'disease_curie', 'disease_title', 'classification_title', 'moi_title') \
+    .withColumnRenamed('gene_curie', 'GenCC_hgnc_id') \
     .withColumnRenamed('disease_curie', 'GenCC_disease_curie') \
     .withColumnRenamed('disease_title', 'GenCC_disease_title') \
     .withColumnRenamed('classification_title', 'GenCC_classification_title') \
     .withColumnRenamed('moi_title', 'GenCC_moi_title') \
-    .groupBy('GenCC_gene_symbol') \
+    .groupBy('GenCC_hgnc_id') \
     .agg(F.collect_set('GenCC_disease_curie').alias('GenCC_disease_curie_combined'), \
          F.collect_set('GenCC_disease_title').alias('GenCC_disease_title_combined'), \
          F.collect_set('GenCC_classification_title').alias('GenCC_classification_title_combined'), \
          F.collect_set('GenCC_moi_title').alias('GenCC_moi_title_combined'))
 
 hgmd_var = spark.read.parquet(args.hgmd_var)
+regeneron = spark.read.parquet(args.regeneron).select(cond + ['REGENERON_ALL_AF', 'REGENERON_ALL_AC'])
+allofus = spark.read.parquet(args.allofus).select(cond + ['gvs_all_af'])
 
 # HGMD genes
+if args.genes:
+    genes = spark.read.format("delta") \
+        .load('s3a://kf-strides-public-vwb-prd/genes/') \
+        .select('entrez_gene_id', 'hgnc', 'ensembl_gene_id')
 hgmd_gene = spark.read.parquet(args.hgmd_gene)
-g_hgmd = hgmd_gene \
-    .select('entrez_gene_id', 'symbol', 'DM', 'DM?') \
-    .withColumnRenamed('symbol', 'HGMD_symbol') \
-    .withColumnRenamed('DM', 'HGMD_DM') \
-    .withColumnRenamed('DM?', 'HGMD_DM?')
+g_hgmd = hgmd_gene.alias('h') \
+    .join(genes.alias('g'), F.col('h.entrez_gene_id') == F.col('g.entrez_gene_id'), how='left') \
+    .select(
+        F.col('h.entrez_gene_id').alias('entrez_gene_id'),
+        F.col('g.hgnc'),
+        F.col('g.ensembl_gene_id'),
+        F.col('h.symbol').alias('HGMD_symbol'),
+        F.col('h.DM').alias('HGMD_DM'),
+        F.col('h.`DM?`').alias('HGMD_DM?')
+    )
 
 # OMIM genes
 omim_gene = spark.read.parquet(args.omim_gene)
@@ -94,25 +138,65 @@ g_omim = omim_gene \
 # Orphanet genes
 orphanet_gene = spark.read.parquet(args.orphanet_gene)
 g_orph = orphanet_gene \
-    .select('gene_symbol', 'disorder_id', 'gene_source_of_validation', 'HGNC_gene_id', 'type_of_inheritance') \
+    .withColumn("Orphanet_HGNC_gene_id",
+                F.when(
+                    F.col("HGNC_gene_id").isNotNull(),
+                    F.concat(F.lit("HGNC:"), F.col("HGNC_gene_id").cast("string"))
+                ).otherwise(None)) \
+    .select('gene_symbol', 'disorder_id', 'gene_source_of_validation', 'Orphanet_HGNC_gene_id', 'type_of_inheritance', 'ensembl_gene_id') \
     .withColumnRenamed('gene_symbol', 'Orphanet_gene_symbol') \
     .withColumnRenamed('disorder_id', 'Orphanet_disorder_id') \
     .withColumnRenamed('gene_source_of_validation', 'Orphanet_gene_source_of_validation') \
-    .withColumnRenamed('HGNC_gene_id', 'Orphanet_HGNC_gene_id') \
     .withColumnRenamed('type_of_inheritance', 'Orphanet_type_of_inheritance') \
     .groupBy('Orphanet_gene_symbol') \
-    .agg(F.collect_set('Orphanet_disorder_id').cast(StringType()).alias('Orphanet_disorder_id_combined'), \
-         F.collect_set('Orphanet_gene_source_of_validation').cast(StringType()).alias('Orphanet_gene_source_of_validation_combined'), \
-         F.collect_set('Orphanet_HGNC_gene_id').cast(StringType()).alias('Orphanet_HGNC_gene_id'), \
-         F.collect_set('Orphanet_type_of_inheritance').cast(StringType()).alias('Orphanet_type_of_inheritance_combined')) \
-    .withColumn('Orphanet_type_of_inheritance_combined', \
-                F.when(F.col('Orphanet_type_of_inheritance_combined') == '[]', F.lit(None)).otherwise(F.col('Orphanet_type_of_inheritance_combined'))) \
-    .withColumn('Orphanet_gene_source_of_validation_combined', \
-                F.when(F.col('Orphanet_gene_source_of_validation_combined') == '[]', F.lit(None)).otherwise(F.col('Orphanet_gene_source_of_validation_combined'))) \
-    .withColumn('Orphanet_HGNC_gene_id', \
-                F.when(F.col('Orphanet_HGNC_gene_id') == '[]', F.lit(None)).otherwise(F.col('Orphanet_HGNC_gene_id')))
+    .agg(
+        F.collect_set('Orphanet_disorder_id').alias('Orphanet_disorder_id_combined'),
+        F.collect_set('Orphanet_HGNC_gene_id').alias('Orphanet_HGNC_gene_id_array'),
+        F.collect_set('ensembl_gene_id').alias('ensembl_gene_id_array'),
+        F.collect_set('Orphanet_gene_source_of_validation').alias('Orphanet_gene_source_of_validation_combined'),
+        F.collect_set('Orphanet_type_of_inheritance').alias('Orphanet_type_of_inheritance_combined')
+    ) \
+    .withColumn('Orphanet_HGNC_gene_id', F.array_join('Orphanet_HGNC_gene_id_array', ',')) \
+    .withColumn('ensembl_gene_id', F.array_join('ensembl_gene_id_array', ',')) \
+    .drop('Orphanet_HGNC_gene_id_array', 'ensembl_gene_id_array') \
+    .withColumn('Orphanet_type_of_inheritance_combined', 
+                F.when(F.size(F.col('Orphanet_type_of_inheritance_combined')) == 0, None)
+                 .otherwise(F.col('Orphanet_type_of_inheritance_combined'))) \
+    .withColumn('Orphanet_gene_source_of_validation_combined', 
+                F.when(F.size(F.col('Orphanet_gene_source_of_validation_combined')) == 0, None)
+                 .otherwise(F.col('Orphanet_gene_source_of_validation_combined')))
 
 topmed = spark.read.parquet(args.topmed).select(cond + [F.col('af')])
+
+Cosmic_CancerGeneCensus = spark.read.parquet(args.Cosmic_CancerGeneCensus).withColumn(
+    "HGNC_ID",
+    F.expr("""
+        filter(
+            split(SYNONYMS, ','),
+            x -> x rlike '^[0-9]+$'
+        )
+    """)
+).withColumn(
+    "ENSG_ID",
+    F.expr("""
+        filter(
+            split(SYNONYMS, ','),
+            x -> x like 'ENSG%'
+        )
+    """)
+).withColumn(
+    "CGC_HGNC_ID",
+    F.when(
+        F.size("HGNC_ID") > 0,
+        F.concat(F.lit("HGNC:"), F.element_at("HGNC_ID", 1))
+    ).otherwise(None)
+).withColumn(
+    "CGC_Gene",
+    F.when(
+        F.size("ENSG_ID") > 0,
+        F.split(F.element_at("ENSG_ID", 1), "\\.")[0]
+    ).otherwise(None)
+).select('TIER', 'MUTATION_TYPES', 'CGC_HGNC_ID', 'CGC_Gene')
 
 
 # --------------------------------------
@@ -170,6 +254,20 @@ singles_sample_variants = singles_sample_variants \
 # Keep high impact variants
 table_imported_exon = singles_sample_variants \
     .where(F.col('CSQ_Consequence').isin(consequences_to_keep))
+
+# join Cosmic_CancerGeneCensus table
+table_imported_exon = table_imported_exon.join(
+    Cosmic_CancerGeneCensus,
+    (singles_sample_variants.CSQ_Gene == Cosmic_CancerGeneCensus.CGC_Gene) |
+    (singles_sample_variants.CSQ_HGNC_ID == Cosmic_CancerGeneCensus.CGC_HGNC_ID),
+    how='left'
+)
+
+# join tables regeneron and allofus
+table_imported_exon = table_imported_exon.join(
+    regeneron, cond, 'left').join( \
+    allofus, cond, 'left').join(\
+    dbsnp, cond, 'left')
 
 # Attach TOPMed and max gnomAD/TOPMed frequencies
 table_imported_exon = table_imported_exon \
@@ -231,7 +329,7 @@ if 'HGMD' in known_variants_l and t_hgmd.count() > 0:
 
 # Attach HGMD gene-disease relationships
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn \
-    .join(g_hgmd.alias('g'), table_imported_exon_dbn.CSQ_SYMBOL == g_hgmd.HGMD_symbol, 'left') \
+    .join(g_hgmd.alias('g'), table_imported_exon_dbn.CSQ_HGNC_ID == g_hgmd.hgnc, 'left') \
     .select([F.col(x) for x in table_imported_exon_dbn.columns] + \
             [F.col('g.entrez_gene_id'), \
                 F.col('g.HGMD_DM'), \
@@ -246,8 +344,10 @@ table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
 
 # Attach Orphanet gene-disease relationships
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
-    .join(g_orph.alias('g'), table_imported_exon_dbn_phenotypes.CSQ_SYMBOL == g_orph.Orphanet_gene_symbol, 'left') \
-    .select([F.col(x) for x in table_imported_exon_dbn_phenotypes.columns] \
+        .join(g_orph.alias('g'), 
+          (table_imported_exon_dbn_phenotypes.CSQ_HGNC_ID == g_orph.Orphanet_HGNC_gene_id) |
+          (table_imported_exon_dbn_phenotypes.CSQ_Gene == g_orph.ensembl_gene_id), 'left') \
+        .select([F.col(x) for x in table_imported_exon_dbn_phenotypes.columns] \
         + [F.col('g.Orphanet_disorder_id_combined'), \
             F.col('g.Orphanet_gene_source_of_validation_combined'), \
             F.col('g.Orphanet_HGNC_gene_id'), \
@@ -255,7 +355,7 @@ table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
 
 # Attach GenCC gene-disease relationships
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
-    .join(g_genc.alias('g'), table_imported_exon_dbn_phenotypes.CSQ_SYMBOL == g_genc.GenCC_gene_symbol, 'left') \
+    .join(g_genc.alias('g'), table_imported_exon_dbn_phenotypes.CSQ_HGNC_ID == g_genc.GenCC_hgnc_id, 'left') \
     .select([F.col(x) for x in table_imported_exon_dbn_phenotypes.columns] \
         + [F.col('g.GenCC_disease_curie_combined'), \
             F.col('g.GenCC_disease_title_combined'), \
@@ -268,12 +368,7 @@ table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
             F.asc(F.col('start'))
         )
 
-# Generate output
-cols_json = [F.to_json(c[0]).alias(c[0]) if c[1].startswith("struct") else F.col(c[0]) for c in table_imported_exon_dbn_phenotypes.dtypes]
-cols_ws = [F.concat_ws(',', c[0]).alias(c[0]) if c[1].startswith("array") else F.col(c[0]) for c in table_imported_exon_dbn_phenotypes.dtypes]
+# Generate output]
 output_file = args.output_basemame + '.VWB_result.tsv'
 table_imported_exon_dbn_phenotypes \
-    .select(cols_json) \
-    .select(cols_ws) \
-    .toPandas() \
-    .to_csv(output_file, sep='\t', header=True, index=False, line_terminator='\n')
+    .toPandas().to_csv(output_file, sep="\t", index=False, na_rep='-', compression='gzip')

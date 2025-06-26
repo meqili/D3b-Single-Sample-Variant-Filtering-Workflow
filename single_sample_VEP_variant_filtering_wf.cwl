@@ -59,13 +59,33 @@ inputs:
     name: dbnsfp.tar.gz
     class: File
     path: 65b03e76b2d0f428e1c6f049
-- id: clinvar
-  doc: clinvar parquet file dir
+- id: dbnsfp_annovar_parquet
+  doc: dbnsfp annovar parquet file dir
   type: File
   sbg:suggestedValue:
-    name: clinvar_20250504.tar.gz
+    name: dbnsfp.tar.gz
     class: File
-    path: 682cce2cf8492c6e34394dc5
+    path: 65b03e76b2d0f428e1c6f049
+- id: dbnsfp_annovar_parquet
+  doc: dbnsfp annovar parquet file dir
+  type: File
+  sbg:suggestedValue:
+    name: dbnsfp.tar.gz
+    class: File
+    path: 65b03e76b2d0f428e1c6f049
+- id: dbnsfp_annovar_parquet
+  doc: dbnsfp annovar parquet file dir
+  type: File
+  sbg:suggestedValue:
+    name: dbnsfp.tar.gz
+    class: File
+    path: 65b03e76b2d0f428e1c6f049
+- id: clinvar
+  doc: clinvar parquet file dir
+  type: boolean
+- id: genes
+  doc: genes parquet file dir
+  type: boolean
 - id: maf
   doc: minor allele frequency (MAF) threshold in gnomAD and TOPMed
   type: double?
@@ -92,7 +112,26 @@ inputs:
 - id: spark_driver_mem
   doc: GB of RAM to allocate to this task
   type: int?
-  default: 10
+  default: 48
+- id: spark_executor_instance
+  doc: number of instances used 
+  type: int?
+- id: spark_executor_mem
+  doc: GB of executor memory
+  type: int?
+  default: 34
+- id: spark_executor_core
+  doc: number of executor cores
+  type: int?
+  default: 5
+- id: spark_driver_core
+  doc: number of driver cores
+  type: int?
+  default: 2
+- id: spark_driver_maxResultSize
+  doc: GB of driver maxResultSize
+  type: int?
+  default: 2
 - id: sql_broadcastTimeout
   doc: .config("spark.sql.broadcastTimeout", 36000)
   type: int?
@@ -102,7 +141,7 @@ outputs:
 - id: VWB_output
   type: File
   outputSource:
-  - SinglesSample-VEP-Filtering-step1/VWB_output
+  - SingleSample-VEP-Filtering-step1/VWB_output
 
 steps:
 - id: vep_to_annovar
@@ -120,7 +159,7 @@ steps:
   run: tools/vep_vcf_to_tsv_header.cwl
   out:
   - id: output_vcf_w_header
-- id: SinglesSample-VEP-Filtering-step1
+- id: SingleSample-VEP-Filtering-step1
   in:
   - id: input_file
     source: vep_vcf_to_tsv_header/output_vcf_w_header
@@ -132,6 +171,8 @@ steps:
     source: dbnsfp_annovar_parquet
   - id: clinvar
     source: clinvar
+  - id: genes
+    source: genes
   - id: maf
     source: maf
   - id: damage_predict_count_lower
@@ -143,6 +184,18 @@ steps:
     - known_variants_l
   - id: sql_broadcastTimeout
     source: sql_broadcastTimeout
+  - id: spark_driver_mem
+    source: spark_driver_mem
+  - id: spark_executor_instance
+    source: spark_executor_instance
+  - id: spark_executor_mem
+    source: spark_executor_mem
+  - id: spark_executor_core
+    source: spark_executor_core
+  - id: spark_driver_core
+    source: spark_driver_core
+  - id: spark_driver_maxResultSize
+    source: spark_driver_maxResultSize
   - id: gencc
     source: gencc
   - id: hgmd_gene
@@ -153,6 +206,6 @@ steps:
     source: orphanet_gene
   - id: topmed
     source: topmed
-  run: tools/SinglesSample-VEP-Filtering-step1.cwl
+  run: tools/SingleSample-VEP-Filtering-step1.cwl
   out:
   - id: VWB_output
