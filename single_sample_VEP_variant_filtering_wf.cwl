@@ -59,32 +59,35 @@ inputs:
     name: dbnsfp.tar.gz
     class: File
     path: 65b03e76b2d0f428e1c6f049
-- id: dbnsfp_annovar_parquet
-  doc: dbnsfp annovar parquet file dir
+- id: Cosmic_CancerGeneCensus
+  doc: Cosmic_CancerGeneCensus parquet tarred file
   type: File
   sbg:suggestedValue:
-    name: dbnsfp.tar.gz
+    name: Cosmic_CancerGeneCensus_v102_GRCh38.tar.gz
     class: File
-    path: 65b03e76b2d0f428e1c6f049
-- id: dbnsfp_annovar_parquet
-  doc: dbnsfp annovar parquet file dir
+    path: 685c11d4799cc51990763a28
+- id: allofus
+  doc: allofus parquet tarred file
   type: File
   sbg:suggestedValue:
-    name: dbnsfp.tar.gz
+    name: hg38_allofus.tar.gz
     class: File
-    path: 65b03e76b2d0f428e1c6f049
-- id: dbnsfp_annovar_parquet
-  doc: dbnsfp annovar parquet file dir
+    path: 685c408e8629c5590195b80e
+- id: regeneron
+  doc: regeneron parquet tarred file
   type: File
   sbg:suggestedValue:
-    name: dbnsfp.tar.gz
+    name: hg38_regeneron.tar.gz
     class: File
-    path: 65b03e76b2d0f428e1c6f049
+    path: 685c1481799cc51990763d98
 - id: clinvar
-  doc: clinvar parquet file dir
+  doc: clinvar parquet delta file
   type: boolean
 - id: genes
-  doc: genes parquet file dir
+  doc: genes parquet delta file
+  type: boolean
+- id: dbsnp
+  doc: dbsnp parquet delta file
   type: boolean
 - id: maf
   doc: minor allele frequency (MAF) threshold in gnomAD and TOPMed
@@ -116,6 +119,7 @@ inputs:
 - id: spark_executor_instance
   doc: number of instances used 
   type: int?
+  default: 3
 - id: spark_executor_mem
   doc: GB of executor memory
   type: int?
@@ -173,6 +177,8 @@ steps:
     source: clinvar
   - id: genes
     source: genes
+  - id: dbsnp
+    source: dbsnp
   - id: maf
     source: maf
   - id: damage_predict_count_lower
@@ -206,6 +212,12 @@ steps:
     source: orphanet_gene
   - id: topmed
     source: topmed
+  - id: allofus
+    source: allofus
+  - id: Cosmic_CancerGeneCensus
+    source: Cosmic_CancerGeneCensus
+  - id: regeneron
+    source: regeneron
   run: tools/SingleSample-VEP-Filtering-step1.cwl
   out:
   - id: VWB_output

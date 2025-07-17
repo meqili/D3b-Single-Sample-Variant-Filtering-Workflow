@@ -1,17 +1,13 @@
 import argparse
 from argparse import RawTextHelpFormatter
-from pyspark.sql import SparkSession, functions as F
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, lit, size, expr, when, flatten, concat, collect_set, array_join, split, element_at, regexp_replace, array_contains, greatest, asc, lpad
 from pyspark.sql.types import StringType
 import glow
 
-parser = argparse.ArgumentParser(
-    description='Script of gene based variant filtering. \n\
-    MUST BE RUN WITH spark-submit. For example: \n\
-    spark-submit --driver-memory 10G yours.py',
-    formatter_class=RawTextHelpFormatter)
-
 parser = argparse.ArgumentParser()
-parser.add_argument('--output_basemame')
+
+parser.add_argument('--output_basename', help='Base name for the output TSV.GZ file')
 parser.add_argument('--input_file', help='Input file path for AR_comphet file')
 parser.add_argument('--clinvar', action='store_true', help='Include clinvar data')
 parser.add_argument('--genes', action='store_true', help='Include genes data')
@@ -77,14 +73,15 @@ if args.clinvar:
 if args.dbsnp:
     dbsnp = spark.read.format("delta") \
         .load('s3a://kf-strides-public-vwb-prd/dbsnp/') \
-        .select(cond + ['name'])
+        .withColumnRenamed('name', 'DBSNP_RSID') \
+        .select(cond + ['DBSNP_RSID'])
 # Table dbnsfp_annovar, added a column for ratio of damage predictions to all predictions
-dbnsfp = spark.read.parquet(args.dbnsfp).select(cond + [F.col('DamagePredCount')])
+dbnsfp = spark.read.parquet(args.dbnsfp).select(cond + [col('DamagePredCount')])
 c_dbn = ['DamagePredCount', 'PredCountRatio_D2T']
 t_dbn = dbnsfp \
     .withColumn('PredCountRatio_D2T', \
-                F.when(F.split(F.col('DamagePredCount'), '_')[1] == 0, F.lit(None).cast(F.StringType())) \
-                .otherwise(F.split(F.col('DamagePredCount'), '_')[0] / F.split(F.col('DamagePredCount'), '_')[1])) \
+                when(split(col('DamagePredCount'), '_')[1] == 0, lit(None).cast(StringType())) \
+                .otherwise(split(col('DamagePredCount'), '_')[0] / split(col('DamagePredCount'), '_')[1])) \
     .select(cond + c_dbn)
 # GenCC genes
 gencc = spark.read.parquet(args.gencc)
@@ -96,14 +93,16 @@ g_genc = gencc \
     .withColumnRenamed('classification_title', 'GenCC_classification_title') \
     .withColumnRenamed('moi_title', 'GenCC_moi_title') \
     .groupBy('GenCC_hgnc_id') \
-    .agg(F.collect_set('GenCC_disease_curie').alias('GenCC_disease_curie_combined'), \
-         F.collect_set('GenCC_disease_title').alias('GenCC_disease_title_combined'), \
-         F.collect_set('GenCC_classification_title').alias('GenCC_classification_title_combined'), \
-         F.collect_set('GenCC_moi_title').alias('GenCC_moi_title_combined'))
+    .agg(collect_set('GenCC_disease_curie').alias('GenCC_disease_curie_combined'), \
+         collect_set('GenCC_disease_title').alias('GenCC_disease_title_combined'), \
+         collect_set('GenCC_classification_title').alias('GenCC_classification_title_combined'), \
+         collect_set('GenCC_moi_title').alias('GenCC_moi_title_combined'))
 
 hgmd_var = spark.read.parquet(args.hgmd_var)
-regeneron = spark.read.parquet(args.regeneron).select(cond + ['REGENERON_ALL_AF', 'REGENERON_ALL_AC'])
-allofus = spark.read.parquet(args.allofus).select(cond + ['gvs_all_af'])
+regeneron = spark.read.parquet(args.regeneron).select(cond + ['REGENERON_ALL_AF'])
+allofus = spark.read.parquet(args.allofus) \
+                        .withColumnRenamed('gvs_all_af', 'ALLOFUS_GVS_ALL_AF') \
+                        .select(cond + ['ALLOFUS_GVS_ALL_AF'])
 
 # HGMD genes
 if args.genes:
@@ -112,14 +111,28 @@ if args.genes:
         .select('entrez_gene_id', 'hgnc', 'ensembl_gene_id')
 hgmd_gene = spark.read.parquet(args.hgmd_gene)
 g_hgmd = hgmd_gene.alias('h') \
-    .join(genes.alias('g'), F.col('h.entrez_gene_id') == F.col('g.entrez_gene_id'), how='left') \
+    .join(genes.alias('g'), col('h.entrez_gene_id') == col('g.entrez_gene_id'), how='left') \
     .select(
-        F.col('h.entrez_gene_id').alias('entrez_gene_id'),
-        F.col('g.hgnc'),
-        F.col('g.ensembl_gene_id'),
-        F.col('h.symbol').alias('HGMD_symbol'),
-        F.col('h.DM').alias('HGMD_DM'),
-        F.col('h.`DM?`').alias('HGMD_DM?')
+        col('h.entrez_gene_id').alias('entrez_gene_id'),
+        col('g.hgnc'),
+        col('g.ensembl_gene_id'),
+        col('h.symbol').alias('HGMD_symbol'),
+        col('h.DM').alias('HGMD_DM'),
+        col('h.`DM?`').alias('HGMD_DM?')
+    ) \
+    .withColumn(
+        "HGMD_DM",
+        when(
+            (size(col("HGMD_DM")) == 0) | (col("HGMD_DM") == expr("array('')")),
+            lit(None)
+        ).otherwise(col("HGMD_DM"))
+    ) \
+    .withColumn(
+        "HGMD_DM?",
+        when(
+            (size(col("HGMD_DM?")) == 0) | (col("HGMD_DM?") == expr("array('')")),
+            lit(None)
+        ).otherwise(col("HGMD_DM?"))
     )
 
 # OMIM genes
@@ -130,47 +143,74 @@ g_omim = omim_gene \
     .withColumnRenamed('omim_gene_id', 'OMIM_gene_id') \
     .withColumnRenamed('phenotype', 'OMIM_phenotype') \
     .groupBy('OMIM_entrez_gene_id') \
-    .agg(F.collect_set('OMIM_gene_id').alias('OMIM_gene_id'), \
-         F.collect_set('OMIM_phenotype').cast(StringType()).alias('OMIM_phenotype_combined')) \
+    .agg(collect_set('OMIM_gene_id').alias('OMIM_gene_id'), \
+         collect_set('OMIM_phenotype').cast(StringType()).alias('OMIM_phenotype_combined')) \
     .withColumn('OMIM_phenotype_combined', \
-                F.when(F.col('OMIM_phenotype_combined') == '[]', F.lit(None)).otherwise(F.col('OMIM_phenotype_combined')))
+                when(col('OMIM_phenotype_combined') == '[]', lit(None)).otherwise(col('OMIM_phenotype_combined')))
 
 # Orphanet genes
 orphanet_gene = spark.read.parquet(args.orphanet_gene)
 g_orph = orphanet_gene \
-    .withColumn("Orphanet_HGNC_gene_id",
-                F.when(
-                    F.col("HGNC_gene_id").isNotNull(),
-                    F.concat(F.lit("HGNC:"), F.col("HGNC_gene_id").cast("string"))
-                ).otherwise(None)) \
-    .select('gene_symbol', 'disorder_id', 'gene_source_of_validation', 'Orphanet_HGNC_gene_id', 'type_of_inheritance', 'ensembl_gene_id') \
+    .withColumn(
+        "Orphanet_HGNC_gene_id",
+        when(
+            col("HGNC_gene_id").isNotNull(),
+            concat(lit("HGNC:"), col("HGNC_gene_id").cast("string"))
+        ).otherwise(None)
+    ) \
+    .select(
+        'gene_symbol', 'disorder_id', 'gene_source_of_validation',
+        'Orphanet_HGNC_gene_id', 'type_of_inheritance', 'ensembl_gene_id'
+    ) \
     .withColumnRenamed('gene_symbol', 'Orphanet_gene_symbol') \
     .withColumnRenamed('disorder_id', 'Orphanet_disorder_id') \
     .withColumnRenamed('gene_source_of_validation', 'Orphanet_gene_source_of_validation') \
     .withColumnRenamed('type_of_inheritance', 'Orphanet_type_of_inheritance') \
     .groupBy('Orphanet_gene_symbol') \
     .agg(
-        F.collect_set('Orphanet_disorder_id').alias('Orphanet_disorder_id_combined'),
-        F.collect_set('Orphanet_HGNC_gene_id').alias('Orphanet_HGNC_gene_id_array'),
-        F.collect_set('ensembl_gene_id').alias('ensembl_gene_id_array'),
-        F.collect_set('Orphanet_gene_source_of_validation').alias('Orphanet_gene_source_of_validation_combined'),
-        F.collect_set('Orphanet_type_of_inheritance').alias('Orphanet_type_of_inheritance_combined')
+        collect_set('Orphanet_disorder_id').alias('Orphanet_disorder_id_combined'),
+        collect_set('Orphanet_HGNC_gene_id').alias('Orphanet_HGNC_gene_id_array'),
+        collect_set('ensembl_gene_id').alias('ensembl_gene_id_array'),
+        collect_set('Orphanet_gene_source_of_validation').alias('Orphanet_gene_source_of_validation_combined'),
+        collect_set('Orphanet_type_of_inheritance').alias('Orphanet_type_of_inheritance_combined')
     ) \
-    .withColumn('Orphanet_HGNC_gene_id', F.array_join('Orphanet_HGNC_gene_id_array', ',')) \
-    .withColumn('ensembl_gene_id', F.array_join('ensembl_gene_id_array', ',')) \
+    .withColumn(
+        'Orphanet_HGNC_gene_id',
+        array_join('Orphanet_HGNC_gene_id_array', ',')
+    ) \
+    .withColumn(
+        'ensembl_gene_id',
+        array_join('ensembl_gene_id_array', ',')
+    ) \
     .drop('Orphanet_HGNC_gene_id_array', 'ensembl_gene_id_array') \
-    .withColumn('Orphanet_type_of_inheritance_combined', 
-                F.when(F.size(F.col('Orphanet_type_of_inheritance_combined')) == 0, None)
-                 .otherwise(F.col('Orphanet_type_of_inheritance_combined'))) \
-    .withColumn('Orphanet_gene_source_of_validation_combined', 
-                F.when(F.size(F.col('Orphanet_gene_source_of_validation_combined')) == 0, None)
-                 .otherwise(F.col('Orphanet_gene_source_of_validation_combined')))
+    .withColumn(
+        'Orphanet_type_of_inheritance_combined',
+        flatten(col('Orphanet_type_of_inheritance_combined'))
+    ) \
+    .withColumn(
+        'Orphanet_type_of_inheritance_combined',
+        when(
+            size(expr("filter(Orphanet_type_of_inheritance_combined, x -> x != '')")) == 0,
+            lit(None)
+        ).otherwise(
+            expr("filter(Orphanet_type_of_inheritance_combined, x -> x != '')")
+        )
+    ) \
+    .withColumn(
+        'Orphanet_gene_source_of_validation_combined',
+        when(
+            size(expr("filter(Orphanet_gene_source_of_validation_combined, x -> x != '')")) == 0,
+            lit(None)
+        ).otherwise(
+            expr("filter(Orphanet_gene_source_of_validation_combined, x -> x != '')")
+        )
+    )
 
-topmed = spark.read.parquet(args.topmed).select(cond + [F.col('af')])
+topmed = spark.read.parquet(args.topmed).select(cond + [col('af')])
 
 Cosmic_CancerGeneCensus = spark.read.parquet(args.Cosmic_CancerGeneCensus).withColumn(
     "HGNC_ID",
-    F.expr("""
+    expr("""
         filter(
             split(SYNONYMS, ','),
             x -> x rlike '^[0-9]+$'
@@ -178,7 +218,7 @@ Cosmic_CancerGeneCensus = spark.read.parquet(args.Cosmic_CancerGeneCensus).withC
     """)
 ).withColumn(
     "ENSG_ID",
-    F.expr("""
+    expr("""
         filter(
             split(SYNONYMS, ','),
             x -> x like 'ENSG%'
@@ -186,17 +226,19 @@ Cosmic_CancerGeneCensus = spark.read.parquet(args.Cosmic_CancerGeneCensus).withC
     """)
 ).withColumn(
     "CGC_HGNC_ID",
-    F.when(
-        F.size("HGNC_ID") > 0,
-        F.concat(F.lit("HGNC:"), F.element_at("HGNC_ID", 1))
+    when(
+        size("HGNC_ID") > 0,
+        concat(lit("HGNC:"), element_at("HGNC_ID", 1))
     ).otherwise(None)
 ).withColumn(
     "CGC_Gene",
-    F.when(
-        F.size("ENSG_ID") > 0,
-        F.split(F.element_at("ENSG_ID", 1), "\\.")[0]
+    when(
+        size("ENSG_ID") > 0,
+        split(element_at("ENSG_ID", 1), "\\.")[0]
     ).otherwise(None)
-).select('TIER', 'MUTATION_TYPES', 'CGC_HGNC_ID', 'CGC_Gene')
+).withColumnRenamed('TIER', 'CGC_TIER') \
+ .withColumnRenamed('MUTATION_TYPES', 'CGC_MUTATION_TYPES') \
+ .select('CGC_TIER', 'CGC_MUTATION_TYPES', 'CGC_HGNC_ID', 'CGC_Gene')
 
 
 # --------------------------------------
@@ -248,12 +290,12 @@ singles_sample_variants = spark \
     .withColumnRenamed('QUAL', 'quality')
 singles_sample_variants = singles_sample_variants \
     .withColumn('chromosome', \
-                F.when(singles_sample_variants.chromosome.startswith('chr'), F.regexp_replace('chromosome', 'chr', '')) \
+                when(singles_sample_variants.chromosome.startswith('chr'), regexp_replace('chromosome', 'chr', '')) \
                 .otherwise(singles_sample_variants.chromosome))
 
 # Keep high impact variants
 table_imported_exon = singles_sample_variants \
-    .where(F.col('CSQ_Consequence').isin(consequences_to_keep))
+    .where(col('CSQ_Consequence').isin(consequences_to_keep))
 
 # join Cosmic_CancerGeneCensus table
 table_imported_exon = table_imported_exon.join(
@@ -261,7 +303,7 @@ table_imported_exon = table_imported_exon.join(
     (singles_sample_variants.CSQ_Gene == Cosmic_CancerGeneCensus.CGC_Gene) |
     (singles_sample_variants.CSQ_HGNC_ID == Cosmic_CancerGeneCensus.CGC_HGNC_ID),
     how='left'
-)
+).drop('CGC_Gene', 'CGC_HGNC_ID')
 
 # join tables regeneron and allofus
 table_imported_exon = table_imported_exon.join(
@@ -272,24 +314,24 @@ table_imported_exon = table_imported_exon.join(
 # Attach TOPMed and max gnomAD/TOPMed frequencies
 table_imported_exon = table_imported_exon \
     .join(topmed.alias('g'), cond, 'left') \
-    .select([F.col(x) for x in table_imported_exon.columns] + [F.col('g.af')]) \
+    .select([col(x) for x in table_imported_exon.columns] + [col('g.af')]) \
     .withColumnRenamed('af', 'TOPMed_af')
 table_imported_exon = table_imported_exon \
-    .withColumn('max_gnomad_topmed', F.greatest( \
-        F.lit(0), \
-        F.col('CSQ_gnomAD_AF').cast('double'), \
-        F.col('INFO_gnomad_3_1_1_AF').cast('double'), \
-        F.col('TOPMed_af').cast('double')))
+    .withColumn('max_gnomad_topmed', greatest( \
+        lit(0), \
+        col('CSQ_gnomAD_AF').cast('double'), \
+        col('INFO_gnomad_3_1_1_AF').cast('double'), \
+        col('TOPMed_af').cast('double')))
 
 # Flag using MAF
 table_imported_exon = table_imported_exon \
-        .withColumn('flag_keep', F.when(F.col('max_gnomad_topmed') <= maf, 1).otherwise(0))
+        .withColumn('flag_keep', when(col('max_gnomad_topmed') <= maf, 1).otherwise(0))
 
 # Table ClinVar, restricted to those seen in variants and labeled as pathogenic/likely_pathogenic
 c_clv = ['VariationID', 'clin_sig']
 t_clv = clinvar \
     .withColumnRenamed('name', 'VariationID') \
-    .where((F.array_contains(F.col('clin_sig'), 'Pathogenic') | F.array_contains(F.col('clin_sig'), 'Likely_pathogenic'))) \
+    .where((array_contains(col('clin_sig'), 'Pathogenic') | array_contains(col('clin_sig'), 'Likely_pathogenic'))) \
     .join(table_imported_exon, cond) \
     .select(cond + c_clv)
 
@@ -297,78 +339,76 @@ t_clv = clinvar \
 c_hgmd = ['HGMDID', 'variant_class']
 t_hgmd = hgmd_var \
     .withColumnRenamed('id', 'HGMDID') \
-    .where(F.col('variant_class').startswith('DM')) \
+    .where(col('variant_class').startswith('DM')) \
     .join(table_imported_exon, cond) \
     .select(cond + c_hgmd)
 
 # Join imported table to dbnsfp, keep variants with PredCountRatio_D2T between dpc_l and dpc_u (both inclusive)
 table_imported_exon_dbn = table_imported_exon \
     .join(t_dbn, cond, how='left') \
-    .withColumn('flag_keep', F.when((table_imported_exon.flag_keep == 1) \
-        & F.col('PredCountRatio_D2T').isNotNull() \
-        & (F.col('PredCountRatio_D2T') >= dpc_l) \
-        & (F.col('PredCountRatio_D2T') <= dpc_u), 1) \
+    .withColumn('flag_keep', when((table_imported_exon.flag_keep == 1) \
+        & col('PredCountRatio_D2T').isNotNull() \
+        & (col('PredCountRatio_D2T') >= dpc_l) \
+        & (col('PredCountRatio_D2T') <= dpc_u), 1) \
     .otherwise(table_imported_exon.flag_keep))
-# print(table_imported_exon_dbn.count())
 
 # Include ClinVar if specified
-if 'Clinvar' in known_variants_l and t_clv.count() > 0:
+if 'Clinvar' in known_variants_l and t_clv.take(1):
     table_imported_exon_dbn = table_imported_exon_dbn \
         .join(t_clv, cond, how='left') \
-        .withColumn('flag_keep', F.when(F.col('VariationID').isNotNull(), 1) \
+        .withColumn('flag_keep', when(col('VariationID').isNotNull(), 1) \
         .otherwise(table_imported_exon_dbn.flag_keep))
-# print(table_imported_exon_dbn.count())
 
 # Include HGMD if specified
-if 'HGMD' in known_variants_l and t_hgmd.count() > 0:
+if 'HGMD' in known_variants_l and t_hgmd.take(1):
     table_imported_exon_dbn = table_imported_exon_dbn \
         .join(t_hgmd, cond, how='left') \
-        .withColumn('flag_keep', F.when(F.col('HGMDID').isNotNull(), 1) \
+        .withColumn('flag_keep', when(col('HGMDID').isNotNull(), 1) \
         .otherwise(table_imported_exon_dbn.flag_keep))
-# print(table_imported_exon_dbn.count())
 
 # Attach HGMD gene-disease relationships
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn \
     .join(g_hgmd.alias('g'), table_imported_exon_dbn.CSQ_HGNC_ID == g_hgmd.hgnc, 'left') \
-    .select([F.col(x) for x in table_imported_exon_dbn.columns] + \
-            [F.col('g.entrez_gene_id'), \
-                F.col('g.HGMD_DM'), \
-                F.col('g.HGMD_DM?')])
+    .select([col(x) for x in table_imported_exon_dbn.columns] + \
+            [col('g.entrez_gene_id'), \
+                col('g.HGMD_DM'), \
+                col('g.HGMD_DM?')])
 
 # Attach OMIM gene-disease relationships
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
     .join(g_omim.alias('g'), table_imported_exon_dbn_phenotypes.entrez_gene_id == g_omim.OMIM_entrez_gene_id, 'left') \
-    .select([F.col(x) for x in table_imported_exon_dbn_phenotypes.columns] + \
-            [F.col('g.OMIM_gene_id'), \
-                F.col('g.OMIM_phenotype_combined')])
+    .select([col(x) for x in table_imported_exon_dbn_phenotypes.columns] + \
+            [col('g.OMIM_gene_id'), \
+                col('g.OMIM_phenotype_combined')])
 
 # Attach Orphanet gene-disease relationships
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
         .join(g_orph.alias('g'), 
           (table_imported_exon_dbn_phenotypes.CSQ_HGNC_ID == g_orph.Orphanet_HGNC_gene_id) |
           (table_imported_exon_dbn_phenotypes.CSQ_Gene == g_orph.ensembl_gene_id), 'left') \
-        .select([F.col(x) for x in table_imported_exon_dbn_phenotypes.columns] \
-        + [F.col('g.Orphanet_disorder_id_combined'), \
-            F.col('g.Orphanet_gene_source_of_validation_combined'), \
-            F.col('g.Orphanet_HGNC_gene_id'), \
-            F.col('g.Orphanet_type_of_inheritance_combined')])
+        .select([col(x) for x in table_imported_exon_dbn_phenotypes.columns] \
+        + [col('g.Orphanet_disorder_id_combined'), \
+            col('g.Orphanet_gene_source_of_validation_combined'), \
+            col('g.Orphanet_HGNC_gene_id'), \
+            col('g.Orphanet_type_of_inheritance_combined')])
 
 # Attach GenCC gene-disease relationships
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
     .join(g_genc.alias('g'), table_imported_exon_dbn_phenotypes.CSQ_HGNC_ID == g_genc.GenCC_hgnc_id, 'left') \
-    .select([F.col(x) for x in table_imported_exon_dbn_phenotypes.columns] \
-        + [F.col('g.GenCC_disease_curie_combined'), \
-            F.col('g.GenCC_disease_title_combined'), \
-            F.col('g.GenCC_classification_title_combined'), \
-            F.col('g.GenCC_moi_title_combined')]) \
-    .sort(F.asc( \
-            F.when(F.col('chromosome').isin(['X', 'Y', 'x', 'y']), F.lpad('chromosome', 2, '2')) \
-                .otherwise(F.lpad('chromosome', 2, '0')) \
+    .select([col(x) for x in table_imported_exon_dbn_phenotypes.columns] \
+        + [col('g.GenCC_disease_curie_combined'), \
+            col('g.GenCC_disease_title_combined'), \
+            col('g.GenCC_classification_title_combined'), \
+            col('g.GenCC_moi_title_combined')]) \
+    .sort(asc( \
+            when(col('chromosome').isin(['X', 'Y', 'x', 'y']), lpad('chromosome', 2, '2')) \
+                .otherwise(lpad('chromosome', 2, '0')) \
             ), \
-            F.asc(F.col('start'))
+            asc(col('start'))
         )
 
 # Generate output]
-output_file = args.output_basemame + '.VWB_result.tsv'
+output_file = args.output_basename + '.VWB_result.tsv.gz'
 table_imported_exon_dbn_phenotypes \
-    .toPandas().to_csv(output_file, sep="\t", index=False, na_rep='-', compression='gzip')
+    .distinct().toPandas() \
+    .to_csv(output_file, sep="\t", index=False, na_rep='-', compression='gzip')

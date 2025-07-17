@@ -226,5 +226,5 @@ arguments:
      --Cosmic_CancerGeneCensus ./$(inputs.Cosmic_CancerGeneCensus.nameroot.replace(".tar", ""))/ \
      --regeneron ./$(inputs.regeneron.nameroot.replace(".tar", ""))/ \
      --allofus ./$(inputs.allofus.nameroot.replace(".tar", ""))/ \
-     --input_file $(inputs.input_file.path) --output_basemame $(inputs.input_file.nameroot)
+     --input_file $(inputs.input_file.path) --output_basename $(inputs.input_file.nameroot)
   shellQuote: false
