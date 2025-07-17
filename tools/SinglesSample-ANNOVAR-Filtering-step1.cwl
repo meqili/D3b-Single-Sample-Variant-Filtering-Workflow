@@ -79,8 +79,10 @@ inputs:
   doc: dbnsfp annovar parquet file dir
   type: File
 - id: clinvar
-  doc: clinvar parquet file dir
-  type: File
+  type: boolean
+  inputBinding:
+    position: 3
+    prefix: --clinvar
 - id: gencc
   doc: gencc parquet file dir
   type: File
@@ -153,7 +155,7 @@ baseCommand:
 arguments:
 - position: 1
   valueFrom: |-
-    $(inputs.dbnsfp_annovar.path)  && tar -xvf $(inputs.clinvar.path)  && tar -xvf $(inputs.gencc.path) && tar -xvf $(inputs.hgmd_gene.path) && tar -xvf $(inputs.omim_gene.path) && tar -xvf $(inputs.orphanet_gene.path) && tar -xvf $(inputs.topmed.path) && tar -xvf $(inputs.spliceai.path) && tar -xvf $(inputs.mmsplice.path) && tar -xvf $(inputs.hgmd_var.path)
+    $(inputs.dbnsfp_annovar.path) && tar -xvf $(inputs.gencc.path) && tar -xvf $(inputs.hgmd_gene.path) && tar -xvf $(inputs.omim_gene.path) && tar -xvf $(inputs.orphanet_gene.path) && tar -xvf $(inputs.topmed.path) && tar -xvf $(inputs.spliceai.path) && tar -xvf $(inputs.mmsplice.path) && tar -xvf $(inputs.hgmd_var.path)
   shellQuote: false
 - position: 2
   valueFrom: |-
@@ -165,7 +167,7 @@ arguments:
     --conf spark.kryoserializer.buffer.max=512m \
     --conf spark.sql.broadcastTimeout=$(inputs.sql_broadcastTimeout)  \
     --driver-memory $(inputs.spark_driver_mem)G  \
-    SinglesSample-ANNOVAR-Filtering-step1.py  --clinvar ./$(inputs.clinvar.nameroot.replace(".tar", ""))/  \
+    SinglesSample-ANNOVAR-Filtering-step1.py   \
     --dbnsfp ./$(inputs.dbnsfp_annovar.nameroot.replace(".tar", ""))/   --gencc ./$(inputs.gencc.nameroot.replace(".tar", ""))/ \
     --hgmd_gene ./$(inputs.hgmd_gene.nameroot.replace(".tar", ""))/  --hgmd_var ./$(inputs.hgmd_var.nameroot.replace(".tar", ""))/  \
     --omim_gene ./$(inputs.omim_gene.nameroot.replace(".tar", ""))/   --orphanet_gene ./$(inputs.orphanet_gene.nameroot.replace(".tar", ""))/ \

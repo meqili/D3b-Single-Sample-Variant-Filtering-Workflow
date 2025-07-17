@@ -72,12 +72,7 @@ inputs:
     class: File
     path: 65b03e76b2d0f428e1c6f049
 - id: clinvar
-  doc: clinvar parquet file dir
-  type: File
-  sbg:suggestedValue:
-    name: clinvar_20250504.tar.gz
-    class: File
-    path: 682cce2cf8492c6e34394dc5
+  type: boolean
 - id: maf
   doc: minor allele frequency (MAF) threshold in gnomAD and TOPMed
   type: double?
