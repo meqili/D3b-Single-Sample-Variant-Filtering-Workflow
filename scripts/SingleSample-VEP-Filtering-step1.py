@@ -208,37 +208,10 @@ g_orph = orphanet_gene \
 
 topmed = spark.read.parquet(args.topmed).select(cond + [col('af')])
 
-Cosmic_CancerGeneCensus = spark.read.parquet(args.Cosmic_CancerGeneCensus).withColumn(
-    "HGNC_ID",
-    expr("""
-        filter(
-            split(SYNONYMS, ','),
-            x -> x rlike '^[0-9]+$'
-        )
-    """)
-).withColumn(
-    "ENSG_ID",
-    expr("""
-        filter(
-            split(SYNONYMS, ','),
-            x -> x like 'ENSG%'
-        )
-    """)
-).withColumn(
-    "CGC_HGNC_ID",
-    when(
-        size("HGNC_ID") > 0,
-        concat(lit("HGNC:"), element_at("HGNC_ID", 1))
-    ).otherwise(None)
-).withColumn(
-    "CGC_Gene",
-    when(
-        size("ENSG_ID") > 0,
-        split(element_at("ENSG_ID", 1), "\\.")[0]
-    ).otherwise(None)
-).withColumnRenamed('TIER', 'CGC_TIER') \
- .withColumnRenamed('MUTATION_TYPES', 'CGC_MUTATION_TYPES') \
- .select('CGC_TIER', 'CGC_MUTATION_TYPES', 'CGC_HGNC_ID', 'CGC_Gene')
+Cosmic_CancerGeneCensus = spark.read.parquet(args.Cosmic_CancerGeneCensus).withColumnRenamed(
+    'Tier', 'CGC_Tier') \
+ .withColumnRenamed('Mutation_Types', 'CGC_Mutation_Types') \
+ .select('CGC_Tier', 'CGC_Mutation_Types', 'Entrez_GeneId')
 
 
 # --------------------------------------
@@ -296,14 +269,6 @@ singles_sample_variants = singles_sample_variants \
 # Keep high impact variants
 table_imported_exon = singles_sample_variants \
     .where(col('CSQ_Consequence').isin(consequences_to_keep))
-
-# join Cosmic_CancerGeneCensus table
-table_imported_exon = table_imported_exon.join(
-    Cosmic_CancerGeneCensus,
-    (singles_sample_variants.CSQ_Gene == Cosmic_CancerGeneCensus.CGC_Gene) |
-    (singles_sample_variants.CSQ_HGNC_ID == Cosmic_CancerGeneCensus.CGC_HGNC_ID),
-    how='left'
-).drop('CGC_Gene', 'CGC_HGNC_ID')
 
 # join tables regeneron and allofus
 table_imported_exon = table_imported_exon.join(
@@ -373,6 +338,13 @@ table_imported_exon_dbn_phenotypes = table_imported_exon_dbn \
             [col('g.entrez_gene_id'), \
                 col('g.HGMD_DM'), \
                 col('g.HGMD_DM?')])
+
+# join Cosmic_CancerGeneCensus table
+table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes.join(
+    Cosmic_CancerGeneCensus,
+    table_imported_exon_dbn_phenotypes.entrez_gene_id == Cosmic_CancerGeneCensus.Entrez_GeneId,
+    how='left'
+).drop('Entrez_GeneId')
 
 # Attach OMIM gene-disease relationships
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
