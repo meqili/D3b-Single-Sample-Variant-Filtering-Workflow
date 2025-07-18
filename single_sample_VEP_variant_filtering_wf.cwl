@@ -36,15 +36,15 @@ inputs:
   doc: the latest HGMD variant  parquet file dir
   type: File
   sbg:suggestedValue:
-    name: hg38_HGMD2025Q1_variant.tar.gz
+    name: hg38_HGMD2025Q2_variant.tar.gz
     class: File
-    path: 67efe4ae799cc5199079fea1
+    path: 6875361a799cc519908a9fc0
 - id: hgmd_gene
   type: File
   sbg:suggestedValue:
-    name: hg38_HGMD2025Q1_gene_sorted.tar.gz
+    name: hg38_HGMD2025Q2_gene_sorted.tar.gz
     class: File
-    path: 67efe4ae799cc5199079fea3
+    path: 6875361a799cc519908a9fc2
 - id: gencc
   doc: gencc parquet file dir
   type: File
