@@ -1,6 +1,6 @@
 # Single Sample Variant Filtering Workflow Updates
 
-## VEP Inputs – June 2025
+## VEP Inputs – July 2025
 
 ### Summary of Changes
 
@@ -18,8 +18,8 @@
    - To ensure consistency across joined datasets, several columns have been renamed:
      - **dbSNP**: `name` → `DBSNP_RSID`
      - **Cosmic Cancer Gene Census**:
-       - `TIER` → `CGC_TIER`
-       - `MUTATION_TYPES` → `CGC_MUTATION_TYPES`
+       - `Tier` → `CGC_Tier`
+       - `Mutation_Types` → `CGC_Mutation_Types`
      - **All of Us (AoU)**: `gvs_all_af` → `ALLOFUS_GVS_ALL_AF`
      - **Regeneron**: Supports `REGENERON_ALL_AF`
 
@@ -35,6 +35,9 @@
      - `hgmd_gene`
      - `orphanet_gene`
      - `gencc`
+
+6. **HGMD update**
+   - `2025Q1` → `2025Q2`
 
 ---
 
