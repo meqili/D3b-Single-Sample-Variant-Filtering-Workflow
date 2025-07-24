@@ -51,14 +51,14 @@ requirements:
     };
 - class: InitialWorkDirRequirement
   listing:
-    - entryname: Gene_VEP_20240617.pl
+    - entryname: Gene_VEP_20250721.pl
       entry:
-        $include: ../scripts/Gene_VEP_20240617.pl
+        $include: ../scripts/Gene_VEP_20250721.pl
 baseCommand: [/bin/bash, -c]
 arguments:
 - position: 0
   valueFrom: |-
-    set -eo pipefail; gunzip -c $(inputs.vep_vcf.path) | perl Gene_VEP_20240617.pl 1> vcf_header.txt 2> $(inputs.vep_vcf.nameroot).Annovar.vcf
+    set -eo pipefail; gunzip -c $(inputs.vep_vcf.path) | perl Gene_VEP_20250721.pl 1> vcf_header.txt 2> $(inputs.vep_vcf.nameroot).Annovar.vcf
   shellQuote: true
 
 inputs:
