@@ -40,21 +40,21 @@
    - `2025Q1` → `2025Q2`
 
 7. **Basic quality control for vcf files (YG)**
- - Added following filterings to script `Gene_VEP_20250721.pl` replacing `Gene_VEP_20240617.pl`
-   ```
-   FILTER == "PASS"
-   FORMAT_DP >= 10
-   FORMAT_GQ >= 20
-   INFO_QD >= 2.0
-   INFO_FS <= 60.0
-   INFO_MQ >= 40.0
-   INFO_MQRankSum > -12.5
-   INFO_ReadPosRankSum > -8.0
-   INFO_SOR <= 3.0
-   ```
+   - Added following filterings to script `Gene_VEP_20250721.pl` replacing `Gene_VEP_20240617.pl`
+      ```
+      FILTER == "PASS"
+      FORMAT_DP >= 10
+      FORMAT_GQ >= 20
+      INFO_QD >= 2.0
+      INFO_FS <= 60.0
+      INFO_MQ >= 40.0
+      INFO_MQRankSum > -12.5
+      INFO_ReadPosRankSum > -8.0
+      INFO_SOR <= 3.0
+      ```
 
 8. **Minor Allele Frequency (MAF) Filtering**
- - Default MAF threshold changed from `0.0001` → `0.001`
+   - Default MAF threshold changed from `0.0001` → `0.001`
 
 ---
 ## ANNOVAR Inputs – June 2025
