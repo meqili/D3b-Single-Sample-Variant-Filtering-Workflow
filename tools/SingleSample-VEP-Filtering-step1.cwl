@@ -157,7 +157,7 @@ inputs:
 - id: maf
   doc: minor allele frequency (MAF) threshold for homozygotes in gnomAD and TOPMed
   type: double?
-  default: 0.0001
+  default: 0.001
   inputBinding:
     prefix: --maf
     position: 3

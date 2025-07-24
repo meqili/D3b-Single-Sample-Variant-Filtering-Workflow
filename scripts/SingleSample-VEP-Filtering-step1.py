@@ -22,7 +22,7 @@ parser.add_argument('--hgmd_gene', help='hgmd_gene parquet file dir')
 parser.add_argument('--omim_gene', help='omim_gene parquet file dir')
 parser.add_argument('--orphanet_gene', help='orphanet_gene parquet file dir')
 parser.add_argument('--topmed', help='topmed parquet file dir')
-parser.add_argument('--maf', default=0.0001, help='minor allele frequency (MAF) threshold in gnomAD and TOPMed')
+parser.add_argument('--maf', default=0.001, help='minor allele frequency (MAF) threshold in gnomAD and TOPMed')
 parser.add_argument('--dpc_l', default=0.5,
         help='damage predict count lower threshold')
 parser.add_argument('--dpc_u', default=1,
@@ -238,7 +238,7 @@ consequences_to_keep = ["transcript_ablation",
 
 
 # Set minor allele frequency (MAF) threshold in gnomAD and TOPMed
-maf = args.maf # default: 0.0001
+maf = args.maf # default: 0.001
 
 # Set range for the ratio of DamagePredCount to AllPredCount in dbNSFP
 dpc_l = args.dpc_l # default: 0.5
