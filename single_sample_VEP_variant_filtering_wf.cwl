@@ -65,7 +65,7 @@ inputs:
   sbg:suggestedValue:
     name: Cosmic_CancerGeneCensus_v102_GRCh38.tar.gz
     class: File
-    path: 685c11d4799cc51990763a28
+    path: 687a982ef8492c6e34e93913
 - id: allofus
   doc: allofus parquet tarred file
   type: File
@@ -92,7 +92,7 @@ inputs:
 - id: maf
   doc: minor allele frequency (MAF) threshold in gnomAD and TOPMed
   type: double?
-  default: 0.0001
+  default: 0.001
 - id: damage_predict_count_lower
   doc: the lower ratio of DamagePredCount to AllPredCount in dbNSFP
   type: double?
