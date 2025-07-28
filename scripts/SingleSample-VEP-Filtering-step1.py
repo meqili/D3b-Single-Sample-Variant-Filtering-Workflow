@@ -14,6 +14,7 @@ parser.add_argument('--genes', action='store_true', help='Include genes data')
 parser.add_argument('--dbsnp', action='store_true', help='Include dbsnp data')
 parser.add_argument('--dbnsfp', help='dbnsfp annovar parquet file dir')
 parser.add_argument('--gencc', help='gencc parquet file dir')
+parser.add_argument('--intervar', help='intervar parquet file dir')
 parser.add_argument('--Cosmic_CancerGeneCensus', help='Cosmic_CancerGeneCensus parquet file dir')
 parser.add_argument('--regeneron', help='regeneron parquet file dir')
 parser.add_argument('--allofus', help='allofus parquet file dir')
@@ -100,6 +101,7 @@ g_genc = gencc \
 
 hgmd_var = spark.read.parquet(args.hgmd_var)
 regeneron = spark.read.parquet(args.regeneron).select(cond + ['REGENERON_ALL_AF'])
+intervar = spark.read.parquet(args.intervar).select(cond + ['InterVar_automated'])
 allofus = spark.read.parquet(args.allofus) \
                         .withColumnRenamed('gvs_all_af', 'ALLOFUS_GVS_ALL_AF') \
                         .select(cond + ['ALLOFUS_GVS_ALL_AF'])
@@ -270,11 +272,12 @@ singles_sample_variants = singles_sample_variants \
 table_imported_exon = singles_sample_variants \
     .where(col('CSQ_Consequence').isin(consequences_to_keep))
 
-# join tables regeneron and allofus
+# join tables regeneron, allofus, dbsnp and intervar
 table_imported_exon = table_imported_exon.join(
     regeneron, cond, 'left').join( \
     allofus, cond, 'left').join(\
-    dbsnp, cond, 'left')
+    dbsnp, cond, 'left').join(\
+    intervar, cond, 'left')
 
 # Attach TOPMed and max gnomAD/TOPMed frequencies
 table_imported_exon = table_imported_exon \
