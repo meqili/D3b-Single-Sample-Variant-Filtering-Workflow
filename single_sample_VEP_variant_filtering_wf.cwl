@@ -80,6 +80,13 @@ inputs:
     name: hg38_regeneron.tar.gz
     class: File
     path: 685c1481799cc51990763d98
+- id: intervar
+  doc: intervar parquet tarred file
+  type: File
+  sbg:suggestedValue:
+    name: hg38_intervar.tar.gz
+    class: File
+    path: 6883f65c13c54b4dd059ebdc
 - id: clinvar
   doc: clinvar parquet delta file
   type: boolean
@@ -218,6 +225,8 @@ steps:
     source: Cosmic_CancerGeneCensus
   - id: regeneron
     source: regeneron
+  - id: intervar
+    source: intervar
   run: tools/SingleSample-VEP-Filtering-step1.cwl
   out:
   - id: VWB_output

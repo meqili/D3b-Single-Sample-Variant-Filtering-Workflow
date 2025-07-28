@@ -125,6 +125,9 @@ inputs:
 - id: regeneron
   doc: the regeneron parquet tarred file
   type: File
+- id: intervar
+  doc: the intervar parquet tarred file
+  type: File
 - id: allofus
   doc: the allofus parquet tarred file
   type: File
@@ -210,8 +213,9 @@ arguments:
     $(inputs.dbnsfp_annovar.path) && tar -xvf $(inputs.gencc.path) && \
      tar -xvf $(inputs.hgmd_gene.path) && tar -xvf $(inputs.omim_gene.path) && \
      tar -xvf $(inputs.orphanet_gene.path) && tar -xvf $(inputs.topmed.path) && \
-     tar -xvf $(inputs.hgmd_var.path) && tar -xvf $(inputs.Cosmic_CancerGeneCensus.path)&& \
-     tar -xvf $(inputs.regeneron.path) && tar -xvf $(inputs.allofus.path)
+     tar -xvf $(inputs.hgmd_var.path) && tar -xvf $(inputs.Cosmic_CancerGeneCensus.path) && \
+     tar -xvf $(inputs.regeneron.path) && tar -xvf $(inputs.allofus.path) && \
+     tar -xvf $(inputs.intervar.path) 
   shellQuote: false
 - position: 2
   valueFrom: |-
@@ -225,6 +229,7 @@ arguments:
      --topmed ./$(inputs.topmed.nameroot.replace(".tar", ""))/ \
      --Cosmic_CancerGeneCensus ./$(inputs.Cosmic_CancerGeneCensus.nameroot.replace(".tar", ""))/ \
      --regeneron ./$(inputs.regeneron.nameroot.replace(".tar", ""))/ \
+     --intervar ./$(inputs.intervar.nameroot.replace(".tar", ""))/ \
      --allofus ./$(inputs.allofus.nameroot.replace(".tar", ""))/ \
      --input_file $(inputs.input_file.path) --output_basename $(inputs.input_file.nameroot)
   shellQuote: false
