@@ -71,5 +71,5 @@ baseCommand: [/bin/bash, -c]
 arguments:
 - position: 0
   valueFrom: |-
-    set -eo pipefail; gunzip -c $(inputs.annovar_vcf.path) | perl VEP_to_TSV_single_input_20240419.pl | gzip -c > $(inputs.annovar_vcf.nameroot).tsv.gz
+    set -eo pipefail; gunzip -c $(inputs.annovar_vcf.path) | perl VEP_to_TSV_single_input_20240419.pl | gzip -c > $(inputs.annovar_vcf.nameroot.replace(/\.vcf/g, "")).tsv.gz
   shellQuote: true

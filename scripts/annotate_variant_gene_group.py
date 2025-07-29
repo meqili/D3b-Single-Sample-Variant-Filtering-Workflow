@@ -101,7 +101,7 @@ variant_list = variant_list.withColumn(
 )
 
 # Save to gzipped TSV
-output_file = args.output_basename + '_gene_group.tsv.gz'
+output_file = args.output_basename + '.gene_group.tsv.gz'
 variant_list \
     .toPandas() \
     .to_csv(output_file, sep="\t", index=False, na_rep='-', compression='gzip')
