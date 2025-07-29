@@ -73,5 +73,5 @@ baseCommand: [/bin/bash, -c]
 arguments:
 - position: 0
   valueFrom: |-
-    set -eo pipefail; perl VEP_to_TSV_header_20240402.pl $(inputs.vcf_header.path) $(inputs.vcf_wo_header.path) | gzip -c > $(inputs.vcf_wo_header.nameroot.replace(/\.tsv/g, "")).tsv.gz
+    set -eo pipefail; perl VEP_to_TSV_header_20240402.pl $(inputs.vcf_header.path) $(inputs.vcf_wo_header.path) | gzip -c > $(inputs.vcf_wo_header.nameroot.replace(/\.vcf/g, "")).tsv.gz
   shellQuote: true
