@@ -231,5 +231,5 @@ arguments:
      --regeneron ./$(inputs.regeneron.nameroot.replace(".tar", ""))/ \
      --intervar ./$(inputs.intervar.nameroot.replace(".tar", ""))/ \
      --allofus ./$(inputs.allofus.nameroot.replace(".tar", ""))/ \
-     --input_file $(inputs.input_file.path) --output_basename $(inputs.input_file.nameroot)
+     --input_file $(inputs.input_file.path) --output_basename $(inputs.input_file.nameroot.replace(/\.tsv/g, ""))
   shellQuote: false

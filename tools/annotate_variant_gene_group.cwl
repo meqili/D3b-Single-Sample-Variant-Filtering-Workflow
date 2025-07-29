@@ -119,11 +119,11 @@ outputs:
       glob: '*gene_group.tsv.gz'
       outputEval: $(inheritMetadata(self, inputs.input_file))
 
-baseCommand: [/bin/bash, -c]
+baseCommand: python
 arguments:
 - position: 1
   valueFrom: |-
-    python annotate_variant_gene_group.py  \
+    annotate_variant_gene_group.py  \
      --input_file $(inputs.input_file.path) \
      --output_basename $(inputs.input_file.nameroot.replace(/\.tsv/g, "")) \
      --cpg_gene $(inputs.cpg_gene_file.path) \

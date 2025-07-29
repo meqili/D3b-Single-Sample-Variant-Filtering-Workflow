@@ -375,6 +375,7 @@ table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
             col('g.GenCC_disease_title_combined'), \
             col('g.GenCC_classification_title_combined'), \
             col('g.GenCC_moi_title_combined')]) \
+    .distinct() \
     .sort(asc( \
             when(col('chromosome').isin(['X', 'Y', 'x', 'y']), lpad('chromosome', 2, '2')) \
                 .otherwise(lpad('chromosome', 2, '0')) \
@@ -382,8 +383,8 @@ table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
             asc(col('start'))
         )
 
-# Generate output]
+# Generate output
 output_file = args.output_basename + '.VWB_result.tsv.gz'
 table_imported_exon_dbn_phenotypes \
-    .distinct().toPandas() \
+    .toPandas() \
     .to_csv(output_file, sep="\t", index=False, na_rep='-', compression='gzip')
