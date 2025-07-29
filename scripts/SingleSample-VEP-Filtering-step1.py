@@ -2,7 +2,7 @@ import argparse
 from argparse import RawTextHelpFormatter
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, lit, size, expr, when, flatten, concat, collect_set, array_join, split, element_at, regexp_replace, array_contains, greatest, asc, lpad
-from pyspark.sql.types import StringType
+from pyspark.sql.types import StringType, LongType
 import glow
 
 parser = argparse.ArgumentParser()
@@ -374,17 +374,17 @@ table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
         + [col('g.GenCC_disease_curie_combined'), \
             col('g.GenCC_disease_title_combined'), \
             col('g.GenCC_classification_title_combined'), \
-            col('g.GenCC_moi_title_combined')]) \
-    .distinct() \
+            col('g.GenCC_moi_title_combined')])
+
+# Generate output
+output_file = args.output_basename + '.VWB_result.tsv.gz'
+table_imported_exon_dbn_phenotypes.distinct() \
+    .withColumn("start", col("start").cast(LongType())) \
     .sort(asc( \
             when(col('chromosome').isin(['X', 'Y', 'x', 'y']), lpad('chromosome', 2, '2')) \
                 .otherwise(lpad('chromosome', 2, '0')) \
             ), \
             asc(col('start'))
-        )
-
-# Generate output
-output_file = args.output_basename + '.VWB_result.tsv.gz'
-table_imported_exon_dbn_phenotypes \
+        ) \
     .toPandas() \
     .to_csv(output_file, sep="\t", index=False, na_rep='-', compression='gzip')
