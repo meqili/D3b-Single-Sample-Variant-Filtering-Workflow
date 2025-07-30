@@ -1,9 +1,7 @@
 # Single Sample Variant Filtering Workflow Updates
 
-## VEP Inputs – July 2025
-
+## VEP Inputs – June/July 2025
 ### Summary of Changes
-
 1. **PySpark Upgrade**
    - Upgraded from **3.1** to **3.5**.
    - This was necessary to support reading **Delta tables**, which are now used for several annotation sources.
@@ -56,6 +54,13 @@
 8. **Minor Allele Frequency (MAF) Filtering**
    - Default MAF threshold changed from `0.0001` → `0.001`
 
+---
+## VEP Inputs + Gene Group Annotation  – June/July 2025
+### Summary of Changes
+1. after running workflow, add column “gene group”: CPG, SFG, CPG/SFG, -
+   - CPG: CancerPredispositionGenes_clean.txt
+   - SFG: Miller_2023_GenetMed_ACMG_S.txt
+   
 ---
 ## ANNOVAR Inputs – June 2025
 
