@@ -55,7 +55,7 @@ variant_list = spark.read.format('csv') \
     .load(args.input_file)
 
 cpg_gene = spark.read.format('csv') \
-    .options(compression='gzip', delimiter='\t', header=True) \
+    .options(delimiter='\t', header=True) \
     .load(args.cpg_gene)
 
 sfg_gene = spark.read.format('csv') \
@@ -71,8 +71,8 @@ cpg_gene = cpg_gene.withColumn("entrez_id", F.col("entrez_id").cast(StringType()
 sfg_gene = sfg_gene.withColumn("Gene", F.col("Gene").cast(StringType()))
 
 # Collect as sets
-cpg_ids = cpg_gene.select("entrez_id").rdd.flatMap(lambda x: x).collect()
-sfg_symbols = sfg_gene.select("Gene").rdd.flatMap(lambda x: x).collect()
+cpg_ids = cpg_gene.select("entrez_id").distinct().rdd.flatMap(lambda x: x).collect()
+sfg_symbols = sfg_gene.select("Gene").distinct().rdd.flatMap(lambda x: x).collect()
 
 # Broadcast
 cpg_broadcast = spark.sparkContext.broadcast(set(cpg_ids))
@@ -97,7 +97,7 @@ group_udf = F.udf(classify_gene_group, StringType())
 # Annotate
 variant_list = variant_list.withColumn(
     "gene_group",
-    group_udf(F.col("entrez_gene_id"), F.col("CSQ_Gene"))
+    group_udf(F.col("entrez_gene_id"), F.col("CSQ_SYMBOL"))
 )
 
 # Save to gzipped TSV
