@@ -1,8 +1,8 @@
 import argparse
 from argparse import RawTextHelpFormatter
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, lit, size, expr, when, flatten, concat, collect_set, array_join, split, element_at, regexp_replace, array_contains, greatest, asc, lpad
-from pyspark.sql.types import StringType, LongType
+from pyspark.sql.functions import col, lit, size, expr, when, flatten, concat, collect_set, array_join, split, regexp_replace, regexp_extract, array_contains, greatest, asc, lpad
+from pyspark.sql.types import StringType, LongType, DoubleType
 import glow
 
 parser = argparse.ArgumentParser()
@@ -70,12 +70,33 @@ cond = ['chromosome', 'start', 'reference', 'alternate']
 if args.clinvar:
     clinvar = spark.read.format("delta") \
         .load('s3a://kf-strides-public-vwb-prd/clinvar/')
-# Table dbSNP
+# Table dbSNP and rename the 'name' column
 if args.dbsnp:
     dbsnp = spark.read.format("delta") \
-        .load('s3a://kf-strides-public-vwb-prd/dbsnp/') \
-        .withColumnRenamed('name', 'DBSNP_RSID') \
-        .select(cond + ['DBSNP_RSID'])
+        .load('s3a://kf-strides-public-vwb-prd/dbsnp/')
+    
+    # Step 1: Extract numeric part from DBSNP_RSID
+    dbsnp_with_num = dbsnp.withColumn(
+        "DBSNP_RSID_num",
+        regexp_extract(col("name"), r"rs(\d+)", 1).cast(DoubleType())
+    )
+    
+    # Step 2: Group by cond columns and find min DBSNP_RSID_num
+    min_dbsnp = dbsnp_with_num.groupBy(cond) \
+        .agg({"DBSNP_RSID_num": "min"}) \
+        .withColumnRenamed("min(DBSNP_RSID_num)", "min_DBSNP_RSID_num")
+    
+    # Step 3: Join back to keep only rows with min numeric RSID
+    filtered_dbsnp = dbsnp_with_num.join(
+        min_dbsnp,
+        on=cond,
+        how='inner'
+    ).filter(
+        col("DBSNP_RSID_num") == col("min_DBSNP_RSID_num")
+        
+    ).withColumnRenamed('name', 'DBSNP_RSID'
+    ).select(cond + ['DBSNP_RSID'])
+
 # Table dbnsfp_annovar, added a column for ratio of damage predictions to all predictions
 dbnsfp = spark.read.parquet(args.dbnsfp).select(cond + [col('DamagePredCount')])
 c_dbn = ['DamagePredCount', 'PredCountRatio_D2T']
@@ -276,7 +297,7 @@ table_imported_exon = singles_sample_variants \
 table_imported_exon = table_imported_exon.join(
     regeneron, cond, 'left').join( \
     allofus, cond, 'left').join(\
-    dbsnp, cond, 'left').join(\
+    filtered_dbsnp, cond, 'left').join(\
     intervar, cond, 'left')
 
 # Attach TOPMed and max gnomAD/TOPMed frequencies

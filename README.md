@@ -14,7 +14,9 @@
 
 3. **Column Standardization and Renaming**
    - To ensure consistency across joined datasets, several columns have been renamed:
-     - **dbSNP**: `name` → `DBSNP_RSID`
+     - **dbSNP**: 
+       - column `name` → `DBSNP_RSID`
+       - for those with multiple rsIDs we only use the one with the smallest rsID
      - **Cosmic Cancer Gene Census**:
        - `Tier` → `CGC_Tier`
        - `Mutation_Types` → `CGC_Mutation_Types`
@@ -57,7 +59,7 @@
 ---
 ## VEP Inputs + Gene Group Annotation  – June/July 2025
 ### Summary of Changes
-1. after running workflow, add column “gene group”: CPG, SFG, CPG/SFG, -
+1. after running workflow, add column `gene_group`: CPG, SFG, CPG/SFG, -
    - CPG: CancerPredispositionGenes_clean.txt
    - SFG: Miller_2023_GenetMed_ACMG_S.txt
    
