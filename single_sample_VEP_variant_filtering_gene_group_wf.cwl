@@ -38,13 +38,13 @@ inputs:
   sbg:suggestedValue:
     name: hg38_HGMD2025Q2_variant.tar.gz
     class: File
-    path: 6875361a799cc519908a9fc0
+    path: 688e1415960d317584f43027
 - id: hgmd_gene
   type: File
   sbg:suggestedValue:
     name: hg38_HGMD2025Q2_gene_sorted.tar.gz
     class: File
-    path: 6875361a799cc519908a9fc2
+    path: 688e1415960d317584f43029
 - id: gencc
   doc: gencc parquet file dir
   type: File
