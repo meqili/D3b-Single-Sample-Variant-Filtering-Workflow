@@ -278,7 +278,7 @@ table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes.join(spl
 # Generate output
 cols_json = [F.to_json(c[0]).alias(c[0]) if c[1].startswith("struct") else F.col(c[0]) for c in table_imported_exon_dbn_phenotypes.dtypes]
 cols_ws = [F.concat_ws(',', c[0]).alias(c[0]) if c[1].startswith("array") else F.col(c[0]) for c in table_imported_exon_dbn_phenotypes.dtypes]
-output_file = args.output_basemame + '.VWB_result.tsv'
+output_file = args.output_basemame + '.VWB_result.tsv.gz'
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
     .select(cols_json) \
     .select(cols_ws) \

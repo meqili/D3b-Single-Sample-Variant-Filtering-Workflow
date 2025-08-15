@@ -1,22 +1,69 @@
-# D3b Bixu Repository Template
+# Single Sample Variant Filtering Workflow Updates
 
-Use this template to bootstrap a new D3b bixu repository 
+## VEP Inputs – June/July 2025
+### Summary of Changes
+1. **PySpark Upgrade**
+   - Upgraded from **3.1** to **3.5**.
+   - This was necessary to support reading **Delta tables**, which are now used for several annotation sources.
 
-### Badges
+2. **Delta Table Integration**
+   - Several annotation datasets are now read directly from **Delta tables**, enabling better performance, scalability, and schema evolution:
+     - **ClinVar**: Previously a tarred Parquet file; now a Delta table.
+     - **Reference gene table** (`genes`)
+     - **dbSNP**
 
-Update the LICENSE badge to point to the new repo location on GitHub.
-Note that the LICENSE badge will fail to render correctly unless the repo has
-been set to **public**.
+3. **Column Standardization and Renaming**
+   - To ensure consistency across joined datasets, several columns have been renamed:
+     - **dbSNP**: 
+       - column `name` → `DBSNP_RSID`
+       - for those with multiple rsIDs we only use the one with the smallest rsID
+     - **Cosmic Cancer Gene Census**:
+       - `Tier` → `CGC_Tier`
+       - `Mutation_Types` → `CGC_Mutation_Types`
+     - **All of Us (AoU)**: `gvs_all_af` → `ALLOFUS_GVS_ALL_AF`
+     - **Regeneron**: Supports `REGENERON_ALL_AF`
 
-Add additional badges for CI, docs, and other integrations as needed within the
-`<p>` tag next to the LICENSE.
+4. **Gene Reference Table Enhancements**
+   - Now sourced from a Delta table.
+   - Key columns used for downstream joins:
+     - `entrez_gene_id`
+     - `hgnc`
+     - `ensembl_gene_id`
 
-### Repo Description
+5. **Expanded Gene-Based Table Joins**
+   - Gene ID normalization allows robust joins across:
+     - `hgmd_gene`
+     - `orphanet_gene`
+     - `gencc`
 
-Update the repositories description with a short summary of the repository's
-intent.
-Include an appropriate emoji at the start of the summary.
+6. **HGMD update**
+   - `2025Q1` → `2025Q2`
 
-Add a handful of tags that summarize topics relating to the repository.
-If the repo has a documentation site or webpage, add it next to the repository
-description.
+7. **Basic quality control for vcf files (YG)**
+   - Added following filterings to script `Gene_VEP_20250721.pl` replacing `Gene_VEP_20240617.pl`
+      ```
+      FILTER == "PASS"
+      FORMAT_DP >= 10
+      FORMAT_GQ >= 20
+      INFO_QD >= 2.0
+      INFO_FS <= 60.0
+      INFO_MQ >= 40.0
+      INFO_MQRankSum > -12.5
+      INFO_ReadPosRankSum > -8.0
+      INFO_SOR <= 3.0
+      ```
+
+8. **Minor Allele Frequency (MAF) Filtering**
+   - Default MAF threshold changed from `0.0001` → `0.001`
+
+---
+## VEP Inputs + Gene Group Annotation  – June/July 2025
+### Summary of Changes
+1. after running workflow, add column `gene_group`: CPG, SFG, CPG/SFG, -
+   - CPG: CancerPredispositionGenes_clean.txt
+   - SFG: Miller_2023_GenetMed_ACMG_S.txt
+   
+---
+## ANNOVAR Inputs – June 2025
+
+_Changes to be documented here..._

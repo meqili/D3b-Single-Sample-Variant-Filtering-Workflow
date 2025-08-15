@@ -2,8 +2,8 @@
 
 cwlVersion: v1.2
 class: Workflow
-id: single-sample-vep-variant-filtering-wf
-label: single sample variant filtering workflow (VEP inputs)
+id: single-sample-VEP-variant-filtering-gene-group-wf
+label: Single Sample Variant Filtering Workflow (VEP Inputs + Gene Group Annotation)
 $namespaces:
   sbg: https://sevenbridges.com
 
@@ -119,6 +119,20 @@ inputs:
     - HGMD
     - Clinvar HGMD
   default: Clinvar HGMD
+- id: cpg_gene_file
+  doc: "Cancer Predisposition Genes (.tsv.gz)"
+  type: File
+  sbg:suggestedValue:
+    name: CancerPredispositionGenes_clean.txt
+    class: File
+    path: 6871829a799cc51990884450
+- id: sfg_gene_file
+  doc: "Secondary Finding Genes (.tsv)"
+  type: File
+  sbg:suggestedValue:
+    name: Miller_2023_GenetMed_ACMG_S.txt
+    class: File
+    path: 68718780f8492c6e34ca8369
 - id: spark_driver_mem
   doc: GB of RAM to allocate to this task
   type: int?
@@ -149,10 +163,10 @@ inputs:
   default: 36000
 
 outputs:
-- id: VWB_output
+- id: gene_group_annotated_output
   type: File
   outputSource:
-  - SingleSample-VEP-Filtering-step1/VWB_output
+  - annotate_variant_gene_group/gene_group_annotated_output
 
 steps:
 - id: vep_to_annovar
@@ -230,3 +244,28 @@ steps:
   run: tools/SingleSample-VEP-Filtering-step1.cwl
   out:
   - id: VWB_output
+- id: annotate_variant_gene_group
+  in:
+  - id: input_file
+    source: SingleSample-VEP-Filtering-step1/VWB_output
+  - id: cpg_gene_file
+    source: cpg_gene_file
+  - id: sfg_gene_file
+    source: sfg_gene_file
+  - id: sql_broadcastTimeout
+    source: sql_broadcastTimeout
+  - id: spark_driver_mem
+    source: spark_driver_mem
+  - id: spark_executor_instance
+    source: spark_executor_instance
+  - id: spark_executor_mem
+    source: spark_executor_mem
+  - id: spark_executor_core
+    source: spark_executor_core
+  - id: spark_driver_core
+    source: spark_driver_core
+  - id: spark_driver_maxResultSize
+    source: spark_driver_maxResultSize
+  run: tools/annotate_variant_gene_group.cwl
+  out:
+  - id: gene_group_annotated_output
