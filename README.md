@@ -1,5 +1,10 @@
 # Single Sample Variant Filtering Workflow Updates
 
+## VEP Inputs – October 2025
+### Summary of Changes
+1. **HGMD update**
+   - `2025Q1` → `2025Q3`
+
 ## VEP Inputs – June/July 2025
 ### Summary of Changes
 1. **PySpark Upgrade**
