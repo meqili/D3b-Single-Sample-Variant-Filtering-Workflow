@@ -377,4 +377,6 @@ Icon
 .AppleDesktop
 Network Trash Folder
 Temporary Items
-.apdisk
+.apdisk.RData
+.Rhistory
+.Rproj.user/
