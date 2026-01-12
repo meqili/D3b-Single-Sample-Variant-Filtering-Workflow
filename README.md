@@ -6,6 +6,8 @@
    - **HGMD**: `2025Q3` → `2025Q4`
    - **GenCC**
    - **intervar**
+2. **Update maximum frequency**
+   - Change `max_gnomad_topmed` to `max_gtar` (gnomad, topmed, allofus, regeneron)
 
 ### October 2025
 1. **HGMD update**

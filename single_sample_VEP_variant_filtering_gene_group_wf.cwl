@@ -86,7 +86,7 @@ inputs:
   sbg:suggestedValue:
     name: hg38_intervar.tar.gz
     class: File
-    path: 6887b1230fa6a65af8f30b25
+    path: 6893c80d6f8ef420f2196ca8
 - id: clinvar
   doc: clinvar parquet delta file
   type: boolean

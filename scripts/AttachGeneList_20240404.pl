@@ -18,7 +18,7 @@ while (<G>) {
 close(G);
 
 my $maf = 0.0001;
-my ($max_gnomad_topmed_i, $flag_keep_i, $PredCountRatio_D2T_i, $CSQ_SYMBOL_i, $CSQ_Gene_i, $entrez_gene_id_i) = ("", "", "", "", "", "");
+my ($max_gtar_i, $flag_keep_i, $PredCountRatio_D2T_i, $CSQ_SYMBOL_i, $CSQ_Gene_i, $entrez_gene_id_i) = ("", "", "", "", "", "");
 open(V, $ARGV[1]) || die "$!";
 while (<V>) {
 	s/[\n\r]+$//;
@@ -26,7 +26,7 @@ while (<V>) {
 	my $gene_info = "";
 	if (/^\#?chromosome/) {
 		for (my $i = 0; $i < @t; $i ++) {
-			$max_gnomad_topmed_i = $i if ($t[$i] eq "max_gnomad_topmed");
+			$max_gtar_i = $i if ($t[$i] eq "max_gtar");
 			$flag_keep_i = $i if ($t[$i] eq "flag_keep");
 			$PredCountRatio_D2T_i = $i if ($t[$i] eq "PredCountRatio_D2T");
 			$CSQ_SYMBOL_i = $i if ($t[$i] eq "CSQ_SYMBOL");
@@ -36,7 +36,7 @@ while (<V>) {
 		$gene_info = "Germline_GOIs_names\tentrez\tensembl\tgene_desc";
 	} else {
 		next unless ($t[$flag_keep_i] == 1 
-			&& ($t[$max_gnomad_topmed_i] eq "" || $t[$max_gnomad_topmed_i] < $maf)
+			&& ($t[$max_gtar_i] eq "" || $t[$max_gtar_i] < $maf)
 		       	&& (!defined $t[$PredCountRatio_D2T_i] || $t[$PredCountRatio_D2T_i] eq "" || $t[$PredCountRatio_D2T_i] >= 0.5));
 		if (defined $t[$entrez_gene_id_i] && exists $List_ncbi{$t[$entrez_gene_id_i]}) {
 			$gene_info = $List_ncbi{$t[$entrez_gene_id_i]};
