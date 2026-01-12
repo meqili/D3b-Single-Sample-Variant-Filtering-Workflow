@@ -1,16 +1,17 @@
 # Single Sample Variant Filtering Workflow Updates
+# Summary of Changes
 ## VEP Inputs
-### Summary of Changes  – January 2026
+### January 2026
 1. **Databases update**
    - **HGMD**: `2025Q3` → `2025Q4`
    - **GenCC**
    - **intervar**
 
-### Summary of Changes – October 2025
+### October 2025
 1. **HGMD update**
    - `2025Q1` → `2025Q3`
 
-### Summary of Changes – June/July 2025
+### June/July 2025
 1. **PySpark Upgrade**
    - Upgraded from **3.1** to **3.5**.
    - This was necessary to support reading **Delta tables**, which are now used for several annotation sources.
@@ -67,10 +68,10 @@
 
 ---
 ## VEP Inputs + Gene Group Annotation 
-### Summary of Changes – January 2026
+### January 2026
 1. update CPG and SFG gene list files: add a few genes 
 
-### Summary of Changes – June/July 2025
+### June/July 2025
 1. after running workflow, add column `gene_group`: CPG, SFG, CPG/SFG, -
    - CPG: CancerPredispositionGenes_clean.txt
    - SFG: Miller_2023_GenetMed_ACMG_S.txt
