@@ -1,13 +1,19 @@
 # Single Sample Variant Filtering Workflow Updates
 # Summary of Changes
+## Dragon VEP Inputs
+### January 2026
+1. Updated scripts based on Dragon inputs
+   - Removed CSQ_gnomAD_AF from step1.py
+
+---
 ## VEP Inputs
 ### January 2026
 1. **Databases update**
    - **HGMD**: `2025Q3` → `2025Q4`
    - **GenCC**
    - **intervar**
-2. **Update maximum frequency**
-   - Change `max_gnomad_topmed` to `max_gtar` (gnomad, topmed, allofus, regeneron)
+2. **Maximum frequency update**
+   - Renamed `max_gnomad_topmed` to `max_gtar` (includes gnomAD, TOPMed, All of Us, and Regeneron)
 
 ### October 2025
 1. **HGMD update**
