@@ -3,7 +3,7 @@
 ## Dragon VEP Inputs
 ### January 2026
 1. Updated scripts based on Dragon inputs
-   - Removed CSQ_gnomAD_AF from step1.py
+   - Removed CSQ_gnomAD_AF and INFO_gnomad_3_1_1_AF from step1.py
 
 ---
 ## VEP Inputs

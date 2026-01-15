@@ -308,7 +308,6 @@ table_imported_exon = table_imported_exon \
 table_imported_exon = table_imported_exon \
     .withColumn('max_gtar', greatest( \
         lit(0), \
-        col('INFO_gnomad_3_1_1_AF').cast('double'), \
         col('TOPMed_af').cast('double'), \
         col('REGENERON_ALL_AF').cast('double'), \
         col('ALLOFUS_GVS_ALL_AF').cast('double')))
