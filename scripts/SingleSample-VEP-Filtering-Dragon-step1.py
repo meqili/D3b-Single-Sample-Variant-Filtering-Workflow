@@ -357,9 +357,10 @@ if 'HGMD' in known_variants_l and t_hgmd.take(1):
 
 # Attach HGMD gene-disease relationships
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn \
-    .join(g_hgmd.alias('g'), table_imported_exon_dbn.CSQ_HGNC_ID == g_hgmd.hgnc, 'left') \
+    .join(g_hgmd.alias('g'), table_imported_exon_dbn.CSQ_Gene == g_hgmd.ensembl_gene_id, 'left') \
     .select([col(x) for x in table_imported_exon_dbn.columns] + \
             [col('g.entrez_gene_id'), \
+                col('g.hgnc'), \
                 col('g.HGMD_DM'), \
                 col('g.HGMD_DM?')])
 
@@ -380,17 +381,16 @@ table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
 # Attach Orphanet gene-disease relationships
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
         .join(g_orph.alias('g'), 
-          (table_imported_exon_dbn_phenotypes.CSQ_HGNC_ID == g_orph.Orphanet_HGNC_gene_id) |
+          (table_imported_exon_dbn_phenotypes.hgnc == g_orph.Orphanet_HGNC_gene_id) |
           (table_imported_exon_dbn_phenotypes.CSQ_Gene == g_orph.ensembl_gene_id), 'left') \
         .select([col(x) for x in table_imported_exon_dbn_phenotypes.columns] \
         + [col('g.Orphanet_disorder_id_combined'), \
             col('g.Orphanet_gene_source_of_validation_combined'), \
-            col('g.Orphanet_HGNC_gene_id'), \
             col('g.Orphanet_type_of_inheritance_combined')])
 
 # Attach GenCC gene-disease relationships
 table_imported_exon_dbn_phenotypes = table_imported_exon_dbn_phenotypes \
-    .join(g_genc.alias('g'), table_imported_exon_dbn_phenotypes.CSQ_HGNC_ID == g_genc.GenCC_hgnc_id, 'left') \
+    .join(g_genc.alias('g'), table_imported_exon_dbn_phenotypes.hgnc == g_genc.GenCC_hgnc_id, 'left') \
     .select([col(x) for x in table_imported_exon_dbn_phenotypes.columns] \
         + [col('g.GenCC_disease_curie_combined'), \
             col('g.GenCC_disease_title_combined'), \

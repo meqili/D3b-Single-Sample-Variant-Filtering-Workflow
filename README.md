@@ -4,6 +4,7 @@
 ### January 2026
 1. Updated scripts based on Dragon inputs
    - Removed CSQ_gnomAD_AF and INFO_gnomad_3_1_1_AF from step1.py
+2. Joined VCF_input and HGMD_gene using ensembl_gene_id instead of hgnc IDs
 
 ---
 ## VEP Inputs
