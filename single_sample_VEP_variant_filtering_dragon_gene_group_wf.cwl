@@ -3,7 +3,7 @@
 cwlVersion: v1.2
 class: Workflow
 id: single-sample-VEP-variant-filtering-gene-group-wf
-label: Single Sample Variant Filtering Workflow (VEP Inputs + Gene Group Annotation)
+label: Single Sample Variant Filtering Workflow (Dragon VEP Inputs + Gene Group Annotation)
 $namespaces:
   sbg: https://sevenbridges.com
 
@@ -49,9 +49,9 @@ inputs:
   doc: gencc parquet file dir
   type: File
   sbg:suggestedValue:
-    name: gencc20240725.tar.gz
+    name: gencc20260113.tar.gz
     class: File
-    path: 66a2e482938544533ad4efbc
+    path: 6967ca7f5ddfaa35efdddd65
 - id: dbnsfp_annovar_parquet
   doc: dbnsfp annovar parquet file dir
   type: File
