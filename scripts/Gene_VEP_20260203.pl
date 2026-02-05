@@ -15,18 +15,18 @@ while (<>) {
 			}
 		}
 	} else {
-		my @t = split(/\t/);
-		my $t_length = scalar(@t);
+		my @t = split(/\t/, $_, -1);
+		# my $t_length = scalar(@t);
 		if (/^\#CHR/) { # header line
 			for (my $i = 0; $i < @t; $i ++) {
 				$filter_i = $i if ($t[$i] eq "FILTER");
 				$info_i = $i if ($t[$i] eq "INFO");
 				$format_i = $i if ($t[$i] eq "FORMAT");
 			}
-			$t[$t_length] = "Flagged";
+			# $t[$t_length] = "Flagged";
 		} elsif ($t[$info_i] =~ /CSQ=([^;]+)/) {
 			next unless (/^chr[\dXY]+\t/i);
-			$t[$t_length] = 0;
+			# $t[$t_length] = 0;
 			# FILTER == PASS
 			next if ($t[$filter_i] ne "PASS" || $t[$info_i] =~/;?TARGETED;?/);
 			# total sequencing depth (DP) >= 10 and genotype quality (GQ) >= 20 in FORMAT
@@ -37,14 +37,21 @@ while (<>) {
 				$gq_i = $i if ($format_item[$i] eq "GQ");
 			}
 			my @format_value = (split(/:/, $t[$format_i + 1]));
-			$t[$t_length] = 1 unless ($format_value[$dp_i] >= 10 && $format_value[$gq_i] >= 20);
+			# $t[$t_length] = 1 unless ($format_value[$dp_i] >= 10 && $format_value[$gq_i] >= 20);
+			next unless ($format_value[$dp_i] >= 10 && $format_value[$gq_i] >= 20);
 			# INFO_QD >= 2.0, INFO_FS <= 60.0, INFO_MQ >= 40.0, INFO_MQRankSum > -12.5, INFO_ReadPosRankSum > -8.0 and INFO_SOR <= 3.0
-			$t[$t_length] = 1 if ($t[$info_i] =~/(?:^|;)QD=([^=;]+)(?:;|$)/ && $1 < 2.0);
-			$t[$t_length] = 1 if ($t[$info_i] =~/(?:^|;)FS=([^=;]+)(?:;|$)/ && $1 > 60.0);
-			$t[$t_length] = 1 if ($t[$info_i] =~/(?:^|;)MQ=([^=;]+)(?:;|$)/ && $1 < 40.0);
-			$t[$t_length] = 1 if ($t[$info_i] =~/(?:^|;)MQRankSum=([^=;]+)(?:;|$)/ && $1 <= -12.5);
-			$t[$t_length] = 1 if ($t[$info_i] =~/(?:^|;)ReadPosRankSum=([^=;]+)(?:;|$)/ && $1 <= -8.0);
-			$t[$t_length] = 1 if ($t[$info_i] =~/(?:^|;)SOR=([^=;]+)(?:;|$)/ && $1 > 3.0);
+			# $t[$t_length] = 1 if ($t[$info_i] =~/(?:^|;)QD=([^=;]+)(?:;|$)/ && $1 < 2.0);
+			next if ($t[$info_i] =~/(?:^|;)QD=([^=;]+)(?:;|$)/ && $1 < 2.0);
+			# $t[$t_length] = 1 if ($t[$info_i] =~/(?:^|;)FS=([^=;]+)(?:;|$)/ && $1 > 60.0);
+			next if ($t[$info_i] =~/(?:^|;)FS=([^=;]+)(?:;|$)/ && $1 > 60.0);
+			# $t[$t_length] = 1 if ($t[$info_i] =~/(?:^|;)MQ=([^=;]+)(?:;|$)/ && $1 < 40.0);
+			next if ($t[$info_i] =~/(?:^|;)MQ=([^=;]+)(?:;|$)/ && $1 < 40.0);
+			# $t[$t_length] = 1 if ($t[$info_i] =~/(?:^|;)MQRankSum=([^=;]+)(?:;|$)/ && $1 <= -12.5);
+			next if ($t[$info_i] =~/(?:^|;)MQRankSum=([^=;]+)(?:;|$)/ && $1 <= -12.5);
+			# $t[$t_length] = 1 if ($t[$info_i] =~/(?:^|;)ReadPosRankSum=([^=;]+)(?:;|$)/ && $1 <= -8.0);
+			next if ($t[$info_i] =~/(?:^|;)ReadPosRankSum=([^=;]+)(?:;|$)/ && $1 <= -8.0);
+			# $t[$t_length] = 1 if ($t[$info_i] =~/(?:^|;)SOR=([^=;]+)(?:;|$)/ && $1 > 3.0);
+			next if ($t[$info_i] =~/(?:^|;)SOR=([^=;]+)(?:;|$)/ && $1 > 3.0);
 			# Annovar-like gene annotation
 			my $ANN = $1;
 			my @vep = split(/,/, $ANN);

@@ -169,18 +169,18 @@ outputs:
   - annotate_variant_gene_group/gene_group_annotated_output
 
 steps:
-- id: vep_to_annovar
+- id: dragon_vep_to_annovar
   in:
   - id: vep_vcf
     source: vep_vcf
-  run: tools/vep_to_annovar.cwl
+  run: tools/dragon_vep_to_annovar.cwl
   out:
   - id: vep_to_annovar_output
   - id: vcf_header
 - id: vep_vcf_to_tsv_header
   in:
-    vcf_header: vep_to_annovar/vcf_header
-    vcf_wo_header: vep_to_annovar/vep_to_annovar_output
+    vcf_header: dragon_vep_to_annovar/vcf_header
+    vcf_wo_header: dragon_vep_to_annovar/vep_to_annovar_output
   run: tools/vep_vcf_to_tsv_header.cwl
   out:
   - id: output_vcf_w_header
