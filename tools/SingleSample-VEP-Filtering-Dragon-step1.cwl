@@ -157,6 +157,10 @@ inputs:
   type: File
 - id: topmed
   type: File
+- id: gnomad41_genome
+  type: File
+- id: gnomad41_exome
+  type: File
 - id: maf
   doc: minor allele frequency (MAF) threshold for homozygotes in gnomAD and TOPMed
   type: double?
@@ -213,6 +217,7 @@ arguments:
     $(inputs.dbnsfp_annovar.path) && tar -xvf $(inputs.gencc.path) && \
      tar -xvf $(inputs.hgmd_gene.path) && tar -xvf $(inputs.omim_gene.path) && \
      tar -xvf $(inputs.orphanet_gene.path) && tar -xvf $(inputs.topmed.path) && \
+     tar -xvf $(inputs.gnomad41_genome.path) && tar -xvf $(inputs.gnomad41_exome.path) && \
      tar -xvf $(inputs.hgmd_var.path) && tar -xvf $(inputs.Cosmic_CancerGeneCensus.path) && \
      tar -xvf $(inputs.regeneron.path) && tar -xvf $(inputs.allofus.path) && \
      tar -xvf $(inputs.intervar.path) 
@@ -227,6 +232,8 @@ arguments:
      --omim_gene ./$(inputs.omim_gene.nameroot.replace(".tar", ""))/   \
      --orphanet_gene ./$(inputs.orphanet_gene.nameroot.replace(".tar", ""))/ \
      --topmed ./$(inputs.topmed.nameroot.replace(".tar", ""))/ \
+     --gnomad41_genome ./$(inputs.gnomad41_genome.nameroot.replace(".tar", ""))/ \
+     --gnomad41_exome ./$(inputs.gnomad41_exome.nameroot.replace(".tar", ""))/ \
      --Cosmic_CancerGeneCensus ./$(inputs.Cosmic_CancerGeneCensus.nameroot.replace(".tar", ""))/ \
      --regeneron ./$(inputs.regeneron.nameroot.replace(".tar", ""))/ \
      --intervar ./$(inputs.intervar.nameroot.replace(".tar", ""))/ \

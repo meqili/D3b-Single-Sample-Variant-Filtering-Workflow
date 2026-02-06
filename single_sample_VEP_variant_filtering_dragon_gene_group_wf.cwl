@@ -20,6 +20,18 @@ inputs:
     name: topmed_bravo.tar.gz
     class: File
     path: 65b1451caa2e154c2a722ec2
+- id: gnomad41_exome
+  type: File
+  sbg:suggestedValue:
+    name: gnomad41_exome_annovar.tar.gz
+    class: File
+    path: 696aa0f9e0dee132ae58d060
+- id: gnomad41_genome
+  type: File
+  sbg:suggestedValue:
+    name: gnomad41_genome_annovar.tar.gz
+    class: File
+    path: 696aa0f9e0dee132ae58d064
 - id: orphanet_gene
   type: File
   sbg:suggestedValue:
@@ -233,6 +245,10 @@ steps:
     source: orphanet_gene
   - id: topmed
     source: topmed
+  - id: gnomad41_genome
+    source: gnomad41_genome
+  - id: gnomad41_exome
+    source: gnomad41_exome
   - id: allofus
     source: allofus
   - id: Cosmic_CancerGeneCensus

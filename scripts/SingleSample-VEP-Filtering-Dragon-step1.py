@@ -23,6 +23,8 @@ parser.add_argument('--hgmd_gene', help='hgmd_gene parquet file dir')
 parser.add_argument('--omim_gene', help='omim_gene parquet file dir')
 parser.add_argument('--orphanet_gene', help='orphanet_gene parquet file dir')
 parser.add_argument('--topmed', help='topmed parquet file dir')
+parser.add_argument('--gnomad41_genome', help='gnomad41_genome parquet file dir')
+parser.add_argument('--gnomad41_exome', help='gnomad41_exome parquet file dir')
 parser.add_argument('--maf', default=0.001, help='minor allele frequency (MAF) threshold in gnomAD and TOPMed')
 parser.add_argument('--dpc_l', default=0.5,
         help='damage predict count lower threshold')
@@ -230,6 +232,8 @@ g_orph = orphanet_gene \
     )
 
 topmed = spark.read.parquet(args.topmed).select(cond + [col('af')])
+gnomad41_genome = spark.read.parquet(args.gnomad41_genome).select(cond + [col('gnomad41_genome_AF')])
+gnomad41_exome = spark.read.parquet(args.gnomad41_exome).select(cond + [col('gnomad41_exome_AF')])
 
 Cosmic_CancerGeneCensus = spark.read.parquet(args.Cosmic_CancerGeneCensus).withColumnRenamed(
     'Tier', 'CGC_Tier') \
@@ -298,7 +302,9 @@ table_imported_exon = table_imported_exon.join(
     regeneron, cond, 'left').join( \
     allofus, cond, 'left').join(\
     filtered_dbsnp, cond, 'left').join(\
-    intervar, cond, 'left')
+    intervar, cond, 'left').join(\
+    gnomad41_genome, cond, 'left').join(\
+    gnomad41_exome, cond, 'left')
 
 # Attach TOPMed and max gnomAD/TOPMed frequencies
 table_imported_exon = table_imported_exon \
@@ -309,6 +315,8 @@ table_imported_exon = table_imported_exon \
     .withColumn('max_gtar', greatest( \
         lit(0), \
         col('TOPMed_af').cast('double'), \
+        col('gnomad41_genome_AF').cast('double'), \
+        col('gnomad41_exome_AF').cast('double'), \
         col('REGENERON_ALL_AF').cast('double'), \
         col('ALLOFUS_GVS_ALL_AF').cast('double')))
 
