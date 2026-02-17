@@ -46,7 +46,8 @@ spark = SparkSession \
     .config('spark.driver.cores', args.spark_driver_core) \
     .config('spark.driver.memory', f'{args.spark_driver_mem}G') \
     .getOrCreate()
-# Register so that glow functions like read vcf work with spark. Must be run in spark shell or in context described in help
+
+# Register Glow
 spark = glow.register(spark)
 
 # Load input data
@@ -65,44 +66,70 @@ sfg_gene = spark.read.format('csv') \
 # Ensure consistent types
 variant_list = variant_list \
     .withColumn("entrez_gene_id", F.col("entrez_gene_id").cast(StringType())) \
-    .withColumn("CSQ_Gene", F.col("CSQ_Gene").cast(StringType()))
+    .withColumn("CSQ_SYMBOL", F.col("CSQ_SYMBOL").cast(StringType())) \
+    .withColumn("hgnc", F.col("hgnc").cast(StringType()))
 
-cpg_gene = cpg_gene.withColumn("entrez_id", F.col("entrez_id").cast(StringType()))
-sfg_gene = sfg_gene.withColumn("Gene", F.col("Gene").cast(StringType()))
+# Collect distinct sets
+cpg_symbol = set(cpg_gene.select("symbol").distinct().rdd.map(lambda r: r[0]).collect())
+cpg_hgnc   = set(cpg_gene.select("hgnc_id").distinct().rdd.map(lambda r: r[0]).collect())
+cpg_entrez = set(cpg_gene.select("entrez_id").distinct().rdd.map(lambda r: r[0]).collect())
 
-# Collect as sets
-cpg_ids = cpg_gene.select("entrez_id").distinct().rdd.flatMap(lambda x: x).collect()
-sfg_symbols = sfg_gene.select("Gene").distinct().rdd.flatMap(lambda x: x).collect()
+sfg_symbol = set(sfg_gene.select("symbol").distinct().rdd.map(lambda r: r[0]).collect())
+sfg_hgnc   = set(sfg_gene.select("hgnc_id").distinct().rdd.map(lambda r: r[0]).collect())
+sfg_entrez = set(sfg_gene.select("entrez_id").distinct().rdd.map(lambda r: r[0]).collect())
 
-# Broadcast
-cpg_broadcast = spark.sparkContext.broadcast(set(cpg_ids))
-sfg_broadcast = spark.sparkContext.broadcast(set(sfg_symbols))
+# Broadcast sets
+cpg_symbol_bc = spark.sparkContext.broadcast(cpg_symbol)
+cpg_hgnc_bc   = spark.sparkContext.broadcast(cpg_hgnc)
+cpg_entrez_bc = spark.sparkContext.broadcast(cpg_entrez)
 
-def classify_gene_group(entrez_id, gene_symbol):
-    if entrez_id is None and gene_symbol is None:
-        return "-"
-    cpg = entrez_id in cpg_broadcast.value
-    sfg = gene_symbol in sfg_broadcast.value
-    if cpg and sfg:
-        return "CPG/SFG"
-    elif cpg:
-        return "CPG"
-    elif sfg:
-        return "SFG"
-    else:
-        return "-"
+sfg_symbol_bc = spark.sparkContext.broadcast(sfg_symbol)
+sfg_hgnc_bc   = spark.sparkContext.broadcast(sfg_hgnc)
+sfg_entrez_bc = spark.sparkContext.broadcast(sfg_entrez)
 
-group_udf = F.udf(classify_gene_group, StringType())
+# Compute classification flags using built-in PySpark functions
+variant_list = variant_list \
+    .withColumn(
+        "cpg_flag",
+        (F.col("entrez_gene_id").isin(cpg_entrez_bc.value) |
+         F.col("hgnc").isin(cpg_hgnc_bc.value))
+    ) \
+    .withColumn(
+        "sfg_flag",
+        (F.col("entrez_gene_id").isin(sfg_entrez_bc.value) |
+         F.col("hgnc").isin(sfg_hgnc_bc.value))
+    )
 
-# Annotate
+# Fallback to symbol if neither entrez/hgnc matched
+variant_list = variant_list \
+    .withColumn(
+        "cpg_final",
+        F.when(
+            (~F.col("cpg_flag") & ~F.col("sfg_flag") &
+             F.col("CSQ_SYMBOL").isin(cpg_symbol_bc.value)),
+            True
+        ).otherwise(F.col("cpg_flag"))
+    ) \
+    .withColumn(
+        "sfg_final",
+        F.when(
+            (~F.col("cpg_flag") & ~F.col("sfg_flag") &
+             F.col("CSQ_SYMBOL").isin(sfg_symbol_bc.value)),
+            True
+        ).otherwise(F.col("sfg_flag"))
+    )
+
+# Create final gene_group label
 variant_list = variant_list.withColumn(
     "gene_group",
-    group_udf(F.col("entrez_gene_id"), F.col("CSQ_SYMBOL"))
-)
+    F.when(F.col("cpg_final") & F.col("sfg_final"), "ECPG/EMGP")
+     .when(F.col("cpg_final"), "ECPG")
+     .when(F.col("sfg_final"), "EMGP")
+     .otherwise("-")
+).drop("cpg_flag", "sfg_flag", "cpg_final", "sfg_final")
 
 # Save to gzipped TSV
 output_file = args.output_basename + '.gene_group.tsv.gz'
 variant_list \
     .toPandas() \
     .to_csv(output_file, sep="\t", index=False, na_rep='-', compression='gzip')
-print(f"[DEBUG] Writing file to: {output_file}")

@@ -77,6 +77,10 @@
 
 ---
 ## VEP Inputs + Gene Group Annotation 
+### February 2026
+1. update gene group name from CPG to ECPG (for Expanded Cancer Predisposition Gene)
+2. update gene group name from SFG to EMGP (for Expanded Medical Genetics Panel)
+
 ### January 2026
 1. update CPG and SFG gene list files: add a few genes 
 

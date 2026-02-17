@@ -3,7 +3,7 @@
 cwlVersion: v1.2
 class: CommandLineTool
 id: SingleSample-VEP-Filtering-step1
-label: SingleSample-VEP-Filtering-step1
+label: SingleSample-VEP-Filtering-Dragon-step1
 doc: |-
   Get a list of deleterious variants in interested genes from specified study cohort(s) in the Kids First program.
 $namespaces:

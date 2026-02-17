@@ -135,16 +135,16 @@ inputs:
   doc: "Cancer Predisposition Genes (.tsv.gz)"
   type: File
   sbg:suggestedValue:
-    name: CancerPredispositionGenes_clean.txt
+    name: ExpandedCancerPredispositionGenes_20260123.list
     class: File
-    path: 6871829a799cc51990884450
+    path: 697bd4f1b297be1da190c284
 - id: sfg_gene_file
   doc: "Secondary Finding Genes (.tsv)"
   type: File
   sbg:suggestedValue:
-    name: Miller_2023_GenetMed_ACMG_S.txt
+    name: ExpandedMedicalGeneticsGenes_20260129.list
     class: File
-    path: 68718780f8492c6e34ca8369
+    path: 697be71519d55415d06c23a9
 - id: spark_driver_mem
   doc: GB of RAM to allocate to this task
   type: int?
