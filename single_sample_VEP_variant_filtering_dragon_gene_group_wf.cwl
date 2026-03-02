@@ -23,15 +23,15 @@ inputs:
 - id: gnomad41_exome
   type: File
   sbg:suggestedValue:
-    name: gnomad41_exome_annovar.tar.gz
+    name: gnomad41_exome_annovar_lit.tar.gz
     class: File
-    path: 696aa0f9e0dee132ae58d060
+    path: 698fd83db297be1da1b99241
 - id: gnomad41_genome
   type: File
   sbg:suggestedValue:
-    name: gnomad41_genome_annovar.tar.gz
+    name: gnomad41_genome_annovar_lit.tar.gz
     class: File
-    path: 696aa0f9e0dee132ae58d064
+    path: 698fb64d19d55415d093a009
 - id: orphanet_gene
   type: File
   sbg:suggestedValue:
